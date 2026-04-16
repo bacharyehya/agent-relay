@@ -49,6 +49,18 @@ enum TestDatabase {
             assignedTo: "chatgpt",
             sourceRefs: [message.id]
         )
+        let blockedHandoff = Handoff(
+            id: "handoff-blocked",
+            threadID: thread.id,
+            title: "Investigate blocked auth rollout",
+            summary: "Pending missing scope",
+            ask: "Confirm the missing scope requirement.",
+            status: .blocked,
+            priority: .medium,
+            createdBy: "human",
+            assignedTo: "chatgpt",
+            sourceRefs: [message.id]
+        )
 
         try ProjectRepository(db).create(project)
         try ThreadRepository(db).create(thread)
@@ -69,6 +81,7 @@ enum TestDatabase {
             )
         }
         try HandoffRepository(db).create(handoff)
+        try HandoffRepository(db).create(blockedHandoff)
 
         let searchRepository = SearchRepository(db)
         try searchRepository.index(message: message)

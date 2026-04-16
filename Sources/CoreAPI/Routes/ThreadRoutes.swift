@@ -1,4 +1,5 @@
 import AppCore
+import CoreStore
 import Foundation
 import Hummingbird
 
@@ -28,6 +29,16 @@ public enum ThreadRoutes {
                 throw HTTPError(.notFound, message: "Thread not found")
             }
             return thread
+        }
+
+        router.get("threads/:threadID/context") { request, context -> ThreadContext in
+            try environment.requireAuthorization(for: request)
+            let threadID = try context.parameters.require("threadID")
+            let mode = request.uri.queryParameters["mode"]
+                .map { String($0) }
+                .flatMap { ThreadContextMode(rawValue: $0) }
+                ?? ThreadContextMode.recent
+            return try environment.inboxRepository.threadContext(threadID: threadID, mode: mode)
         }
 
         router.post("threads") { request, context -> AppCore.Thread in

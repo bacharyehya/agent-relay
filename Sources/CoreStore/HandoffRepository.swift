@@ -101,7 +101,7 @@ public struct HandoffRepository {
         }
     }
 
-    private static func handoff(from row: Row) throws -> Handoff {
+    static func handoff(from row: Row) throws -> Handoff {
         Handoff(
             id: row["id"],
             threadID: row["thread_id"],
@@ -117,12 +117,12 @@ public struct HandoffRepository {
         )
     }
 
-    private static func encodeSourceRefs(_ sourceRefs: [String]) throws -> String {
+    static func encodeSourceRefs(_ sourceRefs: [String]) throws -> String {
         let data = try JSONEncoder().encode(sourceRefs)
         return String(decoding: data, as: UTF8.self)
     }
 
-    private static func decodeSourceRefs(_ rawValue: String) throws -> [String] {
+    static func decodeSourceRefs(_ rawValue: String) throws -> [String] {
         let data = Data(rawValue.utf8)
         return try JSONDecoder().decode([String].self, from: data)
     }

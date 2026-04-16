@@ -1,4 +1,5 @@
 import AppCore
+import CoreStore
 import Foundation
 import Hummingbird
 
@@ -23,6 +24,17 @@ public enum HandoffRoutes {
         on router: Router<BasicRequestContext>,
         environment: AppEnvironment
     ) {
+        router.get("inbox/:actorID") { request, context -> [Handoff] in
+            try environment.requireAuthorization(for: request)
+            let actorID = try context.parameters.require("actorID")
+            return try environment.inboxRepository.inbox(for: actorID)
+        }
+
+        router.get("recents") { request, _ -> [RecentItem] in
+            try environment.requireAuthorization(for: request)
+            return try environment.inboxRepository.recents()
+        }
+
         router.get("threads/:threadID/handoffs") { request, context -> [Handoff] in
             try environment.requireAuthorization(for: request)
             let threadID = try context.parameters.require("threadID")

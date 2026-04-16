@@ -66,7 +66,7 @@ public struct ThreadRepository {
         }
     }
 
-    private static func thread(from row: Row) throws -> AppCore.Thread {
+    static func thread(from row: Row) throws -> AppCore.Thread {
         AppCore.Thread(
             id: row["id"],
             projectID: row["project_id"],
