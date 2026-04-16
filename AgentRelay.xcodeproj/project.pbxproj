@@ -8,13 +8,16 @@
 
 /* Begin PBXBuildFile section */
 		1C7E8AC39206517F0CB31F1C /* MessageRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F42482B3B96A2D8406B178A /* MessageRowView.swift */; };
+		2633E4E572406DD8E19E70EE /* ServiceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6C493F1AE711D423A7349BA /* ServiceController.swift */; };
 		28BEEB1C289085224D04E317 /* AppCore in Frameworks */ = {isa = PBXBuildFile; productRef = 94C94C890571A31792889087 /* AppCore */; };
 		2F362716F617DEBDC2F97C9E /* AgentRelayMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A881D4F6A1BCE835EF717A42 /* AgentRelayMacApp.swift */; };
 		30C26E326593A323A4DD6D68 /* HandoffCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1F7DB0B3BB1B21EE55589A /* HandoffCardView.swift */; };
 		32A8BDFCA79C1B6F821669DA /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B747CF69BE31285160DE79DB /* AppModel.swift */; };
 		47BC81860DB23F92041AC8C3 /* AgentListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03476B55CF72EB62F8DCBD13 /* AgentListView.swift */; };
 		4817112EF8061BCDF2777885 /* ThreadListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D77A6E1A0AE962A1DF6F75B3 /* ThreadListView.swift */; };
+		4DC364AAE63B940196453135 /* LaunchSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 066DB2B6DC7A1B397FD67A4B /* LaunchSettingsView.swift */; };
 		6DC8798C66A049C26D0862D3 /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D2AFEAAFC967E087CD59788 /* ProjectDetailView.swift */; };
+		77BC23528DF1C731D35DF014 /* PauseAgentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5D2740D9C29B185812D52A4 /* PauseAgentsView.swift */; };
 		91CAB4885E67A554028CA912 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9C5D88B20A5CA696AA6C2F /* SidebarView.swift */; };
 		9DC7053FBF59291E7EC2BC59 /* ThreadDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3DE9CC742225720E435EFA /* ThreadDetailViewModel.swift */; };
 		9FFFA47E3F2D62C8793A13BC /* ThreadDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C317BDAD215B6B2B2D675448 /* ThreadDetailView.swift */; };
@@ -33,6 +36,7 @@
 
 /* Begin PBXFileReference section */
 		03476B55CF72EB62F8DCBD13 /* AgentListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentListView.swift; sourceTree = "<group>"; };
+		066DB2B6DC7A1B397FD67A4B /* LaunchSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchSettingsView.swift; sourceTree = "<group>"; };
 		0F9C5D88B20A5CA696AA6C2F /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
 		1451F1AFACD890A04E900004 /* EventStreamClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventStreamClient.swift; sourceTree = "<group>"; };
 		2F67A4B75FB04594B5BE565B /* ProjectListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListView.swift; sourceTree = "<group>"; };
@@ -51,10 +55,12 @@
 		BA1F7DB0B3BB1B21EE55589A /* HandoffCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandoffCardView.swift; sourceTree = "<group>"; };
 		BA8022A0F5FB1AEFAA742D47 /* AppAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAPIClient.swift; sourceTree = "<group>"; };
 		C317BDAD215B6B2B2D675448 /* ThreadDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadDetailView.swift; sourceTree = "<group>"; };
+		C6C493F1AE711D423A7349BA /* ServiceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceController.swift; sourceTree = "<group>"; };
 		CCAF53DF3D4D72EFF36320F3 /* RecentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentsView.swift; sourceTree = "<group>"; };
 		D5F981D5DAC98743FAA0430F /* HandoffComposerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandoffComposerView.swift; sourceTree = "<group>"; };
 		D77A6E1A0AE962A1DF6F75B3 /* ThreadListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadListView.swift; sourceTree = "<group>"; };
 		F232CE9CB8B1684193C8B5E4 /* InboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxView.swift; sourceTree = "<group>"; };
+		F5D2740D9C29B185812D52A4 /* PauseAgentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PauseAgentsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -128,6 +134,14 @@
 			path = Preview;
 			sourceTree = "<group>";
 		};
+		50C6E7F80BD0D2BAF91B8443 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				C6C493F1AE711D423A7349BA /* ServiceController.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
 		62F630232139E0F8F79E227B /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -142,6 +156,15 @@
 				03476B55CF72EB62F8DCBD13 /* AgentListView.swift */,
 			);
 			path = Agents;
+			sourceTree = "<group>";
+		};
+		8535380298C880D5E88B9F94 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				066DB2B6DC7A1B397FD67A4B /* LaunchSettingsView.swift */,
+				F5D2740D9C29B185812D52A4 /* PauseAgentsView.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		894D58B8C9E55747FEADDC01 /* Handoffs */ = {
@@ -183,6 +206,8 @@
 				1D0E1E5469D088B1DC3958C8 /* Projects */,
 				24B5995CAEC29FFA9A153662 /* Recents */,
 				047BF4B5912F3C7DB369EA2A /* Search */,
+				50C6E7F80BD0D2BAF91B8443 /* Services */,
+				8535380298C880D5E88B9F94 /* Settings */,
 				AB9421D35F5B62BC330EE30B /* Sidebar */,
 				1E06AB2F63E9BA2F5889B7ED /* Status */,
 				F510075207C743F604531542 /* Threads */,
@@ -286,13 +311,16 @@
 				AD47D3AF426AD5E8C90E38E1 /* HandoffComposerView.swift in Sources */,
 				FA82A7DE151FC1B9827CDA53 /* InboxView.swift in Sources */,
 				E659BED1CF38CA8EBA94533A /* InboxViewModel.swift in Sources */,
+				4DC364AAE63B940196453135 /* LaunchSettingsView.swift in Sources */,
 				1C7E8AC39206517F0CB31F1C /* MessageRowView.swift in Sources */,
+				77BC23528DF1C731D35DF014 /* PauseAgentsView.swift in Sources */,
 				D23BE3F0958D43F7FD356B66 /* PreviewData.swift in Sources */,
 				6DC8798C66A049C26D0862D3 /* ProjectDetailView.swift in Sources */,
 				F9813CFE6D1831AAAD26C911 /* ProjectDetailViewModel.swift in Sources */,
 				A99C19ADAD31B8C8A6D36643 /* ProjectListView.swift in Sources */,
 				CB5F9D8361A35C8FC46C130F /* RecentsView.swift in Sources */,
 				B79798263E0633ECDDDE412D /* SearchView.swift in Sources */,
+				2633E4E572406DD8E19E70EE /* ServiceController.swift in Sources */,
 				C1AA061F1844E0A077C4653F /* ServiceStatusView.swift in Sources */,
 				91CAB4885E67A554028CA912 /* SidebarView.swift in Sources */,
 				9FFFA47E3F2D62C8793A13BC /* ThreadDetailView.swift in Sources */,

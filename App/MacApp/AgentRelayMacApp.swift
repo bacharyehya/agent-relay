@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct AgentRelayMacApp: App {
     @State private var model = PreviewData.makeAppModel()
+    @State private var serviceController = ServiceController()
 
     var body: some Scene {
         WindowGroup {
@@ -25,13 +26,15 @@ struct AgentRelayMacApp: App {
                 case .settings:
                     VStack(alignment: .leading, spacing: 16) {
                         ServiceStatusView(state: model.serviceState)
-                        Text(detailText(for: model.selection))
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
+                        LaunchSettingsView(controller: serviceController)
+                        PauseAgentsView(controller: serviceController)
                         Spacer()
                     }
                     .padding(24)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .task {
+                        await serviceController.refresh()
+                    }
                 }
             }
             .task {
