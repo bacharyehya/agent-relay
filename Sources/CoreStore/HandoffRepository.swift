@@ -69,6 +69,38 @@ public struct HandoffRepository {
         }
     }
 
+    public func update(_ handoff: Handoff) throws {
+        try dbQueue.write { db in
+            try db.execute(
+                sql: """
+                UPDATE handoffs
+                SET title = ?,
+                    summary = ?,
+                    ask = ?,
+                    status = ?,
+                    priority = ?,
+                    created_by = ?,
+                    assigned_to = ?,
+                    source_refs = ?,
+                    resolution = ?
+                WHERE id = ?
+                """,
+                arguments: [
+                    handoff.title,
+                    handoff.summary,
+                    handoff.ask,
+                    handoff.status.rawValue,
+                    handoff.priority.rawValue,
+                    handoff.createdBy,
+                    handoff.assignedTo,
+                    try Self.encodeSourceRefs(handoff.sourceRefs),
+                    handoff.resolution,
+                    handoff.id,
+                ]
+            )
+        }
+    }
+
     private static func handoff(from row: Row) throws -> Handoff {
         Handoff(
             id: row["id"],

@@ -40,5 +40,15 @@ let package = Package(
                 .product(name: "GRDB", package: "GRDB.swift"),
             ]
         ),
+        .testTarget(
+            name: "CoreAPITests",
+            dependencies: [
+                "AppCore",
+                "CoreAPI",
+                "CoreStore",
+                .product(name: "Hummingbird", package: "hummingbird"),
+                .product(name: "HummingbirdTesting", package: "hummingbird"),
+            ]
+        ),
     ]
 )
