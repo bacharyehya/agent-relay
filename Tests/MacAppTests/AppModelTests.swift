@@ -30,4 +30,14 @@ private struct FailingAppAPIClient: AppAPIClientProtocol {
     func fetchThreadContext(threadID: String, mode: String) async throws -> AppThreadContext {
         AppThreadContext(thread: .example(id: threadID), messages: [], handoffs: [])
     }
+
+    func createHandoff(_ request: AppCreateHandoffRequest) async throws -> Handoff {
+        Handoff.example(threadID: request.threadID)
+    }
+
+    func updateHandoff(id: String, status: HandoffStatus, resolution: String?) async throws -> Handoff {
+        var handoff = Handoff.example(id: id, status: status)
+        handoff.resolution = resolution
+        return handoff
+    }
 }

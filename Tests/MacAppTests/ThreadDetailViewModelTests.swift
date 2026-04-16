@@ -1,48 +1,43 @@
-import AppCore
-import Foundation
+import XCTest
+@testable import AppCore
+@testable import MacAppSupport
 
-enum PreviewData {
-    @MainActor
-    static func makeAppModel() -> AppModel {
-        AppModel(client: PreviewAppAPIClient())
+@MainActor
+final class ThreadDetailViewModelTests: XCTestCase {
+    func test_accept_handoff_updates_local_card_state() async throws {
+        let client = StubAppAPIClient()
+        let model = ThreadDetailViewModel(client: client, threadID: "thread-1")
+
+        await model.acceptHandoff(id: "handoff-1")
+
+        XCTAssertEqual(model.handoffs.first?.status, .accepted)
     }
 }
 
-private struct PreviewAppAPIClient: AppAPIClientProtocol {
+private struct StubAppAPIClient: AppAPIClientProtocol {
     func fetchHealth() async throws -> AppHealth {
         AppHealth(status: "ok")
     }
 
     func fetchProjects() async throws -> [Project] {
-        [Project.example(id: "project-api")]
+        []
     }
 
     func fetchProjectThreads(projectID: String) async throws -> [AppCore.Thread] {
-        [.example(id: "thread-api", projectID: projectID, title: "Webhook auth bug")]
+        []
     }
 
     func fetchThreadContext(threadID: String, mode: String) async throws -> AppThreadContext {
         AppThreadContext(
-            thread: .example(id: threadID, title: "Webhook auth bug"),
-            messages: [
-                Message.example(id: "message-preview-1", threadID: threadID),
-                Message(
-                    id: "message-preview-2",
-                    threadID: threadID,
-                    actorID: "chatgpt",
-                    body: "Root cause is a stale token scope.",
-                    format: .markdown
-                ),
-            ],
-            handoffs: [
-                Handoff.example(id: "handoff-preview", threadID: threadID, status: .open, title: "Confirm scope fix")
-            ]
+            thread: .example(id: threadID),
+            messages: [],
+            handoffs: [.example(id: "handoff-1", threadID: threadID)]
         )
     }
 
     func createHandoff(_ request: AppCreateHandoffRequest) async throws -> Handoff {
         Handoff(
-            id: "handoff-preview-created",
+            id: "handoff-created",
             threadID: request.threadID,
             title: request.title,
             summary: request.summary,

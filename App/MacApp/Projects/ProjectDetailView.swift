@@ -1,9 +1,11 @@
 import SwiftUI
 
 struct ProjectDetailView: View {
+    private let client: any AppAPIClientProtocol
     @State private var model: ProjectDetailViewModel
 
     init(client: any AppAPIClientProtocol, projectID: String) {
+        self.client = client
         _model = State(initialValue: ProjectDetailViewModel(client: client, projectID: projectID))
     }
 
@@ -20,7 +22,11 @@ struct ProjectDetailView: View {
                 }
             }
 
-            ThreadDetailView(context: model.threadContext)
+            ThreadDetailView(
+                client: client,
+                threadID: model.selectedThreadID,
+                seedContext: model.threadContext
+            )
         }
         .task {
             await model.load()

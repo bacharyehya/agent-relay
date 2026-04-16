@@ -10,12 +10,15 @@
 		1C7E8AC39206517F0CB31F1C /* MessageRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F42482B3B96A2D8406B178A /* MessageRowView.swift */; };
 		28BEEB1C289085224D04E317 /* AppCore in Frameworks */ = {isa = PBXBuildFile; productRef = 94C94C890571A31792889087 /* AppCore */; };
 		2F362716F617DEBDC2F97C9E /* AgentRelayMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A881D4F6A1BCE835EF717A42 /* AgentRelayMacApp.swift */; };
+		30C26E326593A323A4DD6D68 /* HandoffCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1F7DB0B3BB1B21EE55589A /* HandoffCardView.swift */; };
 		32A8BDFCA79C1B6F821669DA /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B747CF69BE31285160DE79DB /* AppModel.swift */; };
 		4817112EF8061BCDF2777885 /* ThreadListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D77A6E1A0AE962A1DF6F75B3 /* ThreadListView.swift */; };
 		6DC8798C66A049C26D0862D3 /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D2AFEAAFC967E087CD59788 /* ProjectDetailView.swift */; };
 		91CAB4885E67A554028CA912 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9C5D88B20A5CA696AA6C2F /* SidebarView.swift */; };
+		9DC7053FBF59291E7EC2BC59 /* ThreadDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3DE9CC742225720E435EFA /* ThreadDetailViewModel.swift */; };
 		9FFFA47E3F2D62C8793A13BC /* ThreadDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C317BDAD215B6B2B2D675448 /* ThreadDetailView.swift */; };
 		A99C19ADAD31B8C8A6D36643 /* ProjectListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F67A4B75FB04594B5BE565B /* ProjectListView.swift */; };
+		AD47D3AF426AD5E8C90E38E1 /* HandoffComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5F981D5DAC98743FAA0430F /* HandoffComposerView.swift */; };
 		C1AA061F1844E0A077C4653F /* ServiceStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D70FADDC2163DFE1AAF25A1 /* ServiceStatusView.swift */; };
 		D23BE3F0958D43F7FD356B66 /* PreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EEE994B91CF64DC6A31E728 /* PreviewData.swift */; };
 		E21137A6210C3188016D30D5 /* EventStreamClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1451F1AFACD890A04E900004 /* EventStreamClient.swift */; };
@@ -29,6 +32,7 @@
 		2F67A4B75FB04594B5BE565B /* ProjectListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListView.swift; sourceTree = "<group>"; };
 		4A03EFC8E7FE0FD61CECD6B1 /* AgentRelayMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AgentRelayMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D2AFEAAFC967E087CD59788 /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailView.swift; sourceTree = "<group>"; };
+		5A3DE9CC742225720E435EFA /* ThreadDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadDetailViewModel.swift; sourceTree = "<group>"; };
 		715A81B5177B191D79B24AC8 /* agent-relay */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "agent-relay"; path = .; sourceTree = SOURCE_ROOT; };
 		7D70FADDC2163DFE1AAF25A1 /* ServiceStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceStatusView.swift; sourceTree = "<group>"; };
 		80E9895FD9672C6DF0BB3329 /* ProjectDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailViewModel.swift; sourceTree = "<group>"; };
@@ -36,8 +40,10 @@
 		9F42482B3B96A2D8406B178A /* MessageRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRowView.swift; sourceTree = "<group>"; };
 		A881D4F6A1BCE835EF717A42 /* AgentRelayMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRelayMacApp.swift; sourceTree = "<group>"; };
 		B747CF69BE31285160DE79DB /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		BA1F7DB0B3BB1B21EE55589A /* HandoffCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandoffCardView.swift; sourceTree = "<group>"; };
 		BA8022A0F5FB1AEFAA742D47 /* AppAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAPIClient.swift; sourceTree = "<group>"; };
 		C317BDAD215B6B2B2D675448 /* ThreadDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadDetailView.swift; sourceTree = "<group>"; };
+		D5F981D5DAC98743FAA0430F /* HandoffComposerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandoffComposerView.swift; sourceTree = "<group>"; };
 		D77A6E1A0AE962A1DF6F75B3 /* ThreadListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadListView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -74,6 +80,7 @@
 			isa = PBXGroup;
 			children = (
 				80E9895FD9672C6DF0BB3329 /* ProjectDetailViewModel.swift */,
+				5A3DE9CC742225720E435EFA /* ThreadDetailViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -92,6 +99,15 @@
 				4A03EFC8E7FE0FD61CECD6B1 /* AgentRelayMac.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		894D58B8C9E55747FEADDC01 /* Handoffs */ = {
+			isa = PBXGroup;
+			children = (
+				BA1F7DB0B3BB1B21EE55589A /* HandoffCardView.swift */,
+				D5F981D5DAC98743FAA0430F /* HandoffComposerView.swift */,
+			);
+			path = Handoffs;
 			sourceTree = "<group>";
 		};
 		A86A068FDE81102040A0C02C /* API */ = {
@@ -117,6 +133,7 @@
 				A881D4F6A1BCE835EF717A42 /* AgentRelayMacApp.swift */,
 				B747CF69BE31285160DE79DB /* AppModel.swift */,
 				A86A068FDE81102040A0C02C /* API */,
+				894D58B8C9E55747FEADDC01 /* Handoffs */,
 				344BD28D5B89FBD9A11D7795 /* Preview */,
 				1D0E1E5469D088B1DC3958C8 /* Projects */,
 				AB9421D35F5B62BC330EE30B /* Sidebar */,
@@ -217,6 +234,8 @@
 				FB992B9BDF5F68DE71395FB6 /* AppAPIClient.swift in Sources */,
 				32A8BDFCA79C1B6F821669DA /* AppModel.swift in Sources */,
 				E21137A6210C3188016D30D5 /* EventStreamClient.swift in Sources */,
+				30C26E326593A323A4DD6D68 /* HandoffCardView.swift in Sources */,
+				AD47D3AF426AD5E8C90E38E1 /* HandoffComposerView.swift in Sources */,
 				1C7E8AC39206517F0CB31F1C /* MessageRowView.swift in Sources */,
 				D23BE3F0958D43F7FD356B66 /* PreviewData.swift in Sources */,
 				6DC8798C66A049C26D0862D3 /* ProjectDetailView.swift in Sources */,
@@ -225,6 +244,7 @@
 				C1AA061F1844E0A077C4653F /* ServiceStatusView.swift in Sources */,
 				91CAB4885E67A554028CA912 /* SidebarView.swift in Sources */,
 				9FFFA47E3F2D62C8793A13BC /* ThreadDetailView.swift in Sources */,
+				9DC7053FBF59291E7EC2BC59 /* ThreadDetailViewModel.swift in Sources */,
 				4817112EF8061BCDF2777885 /* ThreadListView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
