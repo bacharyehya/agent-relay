@@ -33,5 +33,12 @@ let package = Package(
         .executableTarget(name: "CoreService", dependencies: ["CoreAPI"]),
         .executableTarget(name: "MCPAdapter", dependencies: ["AppCore"]),
         .testTarget(name: "AppCoreTests", dependencies: ["AppCore"]),
+        .testTarget(
+            name: "CoreStoreTests",
+            dependencies: [
+                "CoreStore",
+                .product(name: "GRDB", package: "GRDB.swift"),
+            ]
+        ),
     ]
 )
