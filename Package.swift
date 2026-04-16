@@ -70,5 +70,16 @@ let package = Package(
                 "MacAppSupport",
             ]
         ),
+        .testTarget(
+            name: "IntegrationTests",
+            dependencies: [
+                "AppCore",
+                "CoreAPI",
+                "CoreStore",
+                .product(name: "GRDB", package: "GRDB.swift"),
+                .product(name: "Hummingbird", package: "hummingbird"),
+                .product(name: "HummingbirdTesting", package: "hummingbird"),
+            ]
+        ),
     ]
 )
