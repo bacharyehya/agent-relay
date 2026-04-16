@@ -1,3 +1,4 @@
+import AppCore
 import XCTest
 @testable import MacAppSupport
 
@@ -16,5 +17,17 @@ final class AppModelTests: XCTestCase {
 private struct FailingAppAPIClient: AppAPIClientProtocol {
     func fetchHealth() async throws -> AppHealth {
         throw URLError(.cannotConnectToHost)
+    }
+
+    func fetchProjects() async throws -> [Project] {
+        []
+    }
+
+    func fetchProjectThreads(projectID: String) async throws -> [AppCore.Thread] {
+        []
+    }
+
+    func fetchThreadContext(threadID: String, mode: String) async throws -> AppThreadContext {
+        AppThreadContext(thread: .example(id: threadID), messages: [], handoffs: [])
     }
 }

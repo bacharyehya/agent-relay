@@ -8,6 +8,9 @@ targets:
   AgentRelayMac:
     type: application
     platform: macOS
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
     sources:
       - App/MacApp
     dependencies:

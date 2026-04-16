@@ -11,15 +11,19 @@ struct AgentRelayMacApp: App {
             NavigationSplitView {
                 SidebarView(selection: $bindableModel.selection)
             } detail: {
-                VStack(alignment: .leading, spacing: 16) {
-                    ServiceStatusView(state: model.serviceState)
-                    Text(detailText(for: model.selection))
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                    Spacer()
+                if model.selection == .projects {
+                    ProjectDetailView(client: AppAPIClient(), projectID: "project-api")
+                } else {
+                    VStack(alignment: .leading, spacing: 16) {
+                        ServiceStatusView(state: model.serviceState)
+                        Text(detailText(for: model.selection))
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(24)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .padding(24)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
             .task {
                 await model.refresh()

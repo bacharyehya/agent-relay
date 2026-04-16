@@ -33,6 +33,14 @@ public struct Thread: Codable, Equatable, Identifiable, Sendable {
     public static func example(id: String = "thread-1", projectID: String = "project-1") -> Thread {
         Thread(id: id, projectID: projectID, title: "Webhook auth bug")
     }
+
+    public static func example(
+        id: String = "thread-1",
+        projectID: String = "project-1",
+        title: String
+    ) -> Thread {
+        Thread(id: id, projectID: projectID, title: title)
+    }
 }
 
 public enum ThreadIntentType: String, Codable, Sendable {
