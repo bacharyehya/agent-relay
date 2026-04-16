@@ -30,6 +30,12 @@ let package = Package(
                 .product(name: "Hummingbird", package: "hummingbird"),
             ]
         ),
+        .target(
+            name: "MacAppSupport",
+            dependencies: ["AppCore"],
+            path: "App/MacApp",
+            exclude: ["AgentRelayMacApp.swift"]
+        ),
         .executableTarget(name: "CoreService", dependencies: ["CoreAPI"]),
         .executableTarget(name: "MCPAdapter", dependencies: ["AppCore"]),
         .testTarget(name: "AppCoreTests", dependencies: ["AppCore"]),
@@ -55,6 +61,13 @@ let package = Package(
             dependencies: [
                 "AppCore",
                 "MCPAdapter",
+            ]
+        ),
+        .testTarget(
+            name: "MacAppTests",
+            dependencies: [
+                "AppCore",
+                "MacAppSupport",
             ]
         ),
     ]
