@@ -50,5 +50,12 @@ let package = Package(
                 .product(name: "HummingbirdTesting", package: "hummingbird"),
             ]
         ),
+        .testTarget(
+            name: "MCPAdapterTests",
+            dependencies: [
+                "AppCore",
+                "MCPAdapter",
+            ]
+        ),
     ]
 )

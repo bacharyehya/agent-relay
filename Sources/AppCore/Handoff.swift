@@ -58,17 +58,26 @@ public struct Handoff: Codable, Equatable, Identifiable, Sendable {
     public static func example(
         id: String = "handoff-1",
         threadID: String = "thread-1",
-        status: HandoffStatus = .open
+        status: HandoffStatus = .open,
+        title: String = "Fix webhook auth bug"
     ) -> Handoff {
         Handoff(
             id: id,
             threadID: threadID,
-            title: "Fix webhook auth bug",
+            title: title,
             summary: "Investigate intermittent auth failures",
             ask: "Confirm the root cause and provide the minimal fix.",
             status: status,
             sourceRefs: ["message-1"]
         )
+    }
+
+    public static func example(
+        id: String = "handoff-1",
+        threadID: String = "thread-1",
+        status: HandoffStatus = .open
+    ) -> Handoff {
+        example(id: id, threadID: threadID, status: status, title: "Fix webhook auth bug")
     }
 }
 
