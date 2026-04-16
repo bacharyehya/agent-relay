@@ -73,18 +73,18 @@ public enum HandoffRoutes {
             )
 
             try environment.handoffRepository.create(handoff)
-            try environment.eventRepository.record(
-                Event(
-                    id: UUID().uuidString.lowercased(),
-                    type: .handoffCreated,
-                    projectID: thread.projectID,
-                    threadID: thread.id,
-                    handoffID: handoff.id,
-                    actorID: payload.createdBy,
-                    body: "Created handoff \(handoff.title)",
-                    createdAt: Date()
-                )
+            let event = Event(
+                id: UUID().uuidString.lowercased(),
+                type: .handoffCreated,
+                projectID: thread.projectID,
+                threadID: thread.id,
+                handoffID: handoff.id,
+                actorID: payload.createdBy,
+                body: "Created handoff \(handoff.title)",
+                createdAt: Date()
             )
+            try environment.eventRepository.record(event)
+            await environment.eventStream.publish(event)
             return handoff
         }
 
@@ -117,18 +117,18 @@ public enum HandoffRoutes {
             }
 
             let thread = try environment.threadRepository.get(id: handoff.threadID)
-            try environment.eventRepository.record(
-                Event(
-                    id: UUID().uuidString.lowercased(),
-                    type: eventType,
-                    projectID: thread?.projectID,
-                    threadID: handoff.threadID,
-                    handoffID: handoff.id,
-                    actorID: handoff.assignedTo,
-                    body: "Updated handoff \(handoff.title) to \(handoff.status.rawValue)",
-                    createdAt: Date()
-                )
+            let event = Event(
+                id: UUID().uuidString.lowercased(),
+                type: eventType,
+                projectID: thread?.projectID,
+                threadID: handoff.threadID,
+                handoffID: handoff.id,
+                actorID: handoff.assignedTo,
+                body: "Updated handoff \(handoff.title) to \(handoff.status.rawValue)",
+                createdAt: Date()
             )
+            try environment.eventRepository.record(event)
+            await environment.eventStream.publish(event)
             return handoff
         }
     }

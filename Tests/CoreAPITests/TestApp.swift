@@ -126,6 +126,7 @@ enum TestApp {
             handoffRepository: HandoffRepository(databaseQueue),
             eventRepository: EventRepository(databaseQueue),
             inboxRepository: InboxRepository(databaseQueue),
+            notificationRepository: NotificationRepository(databaseQueue),
             authToken: AuthToken(token)
         )
         return CoreAPIApp.makeApplication(environment: environment)

@@ -16,6 +16,8 @@ public final class AppEnvironment: @unchecked Sendable {
     public let handoffRepository: HandoffRepository
     public let eventRepository: EventRepository
     public let inboxRepository: InboxRepository
+    public let notificationRepository: NotificationRepository
+    public let eventStream: EventStream
     public let authToken: AuthToken
 
     public init(
@@ -24,6 +26,8 @@ public final class AppEnvironment: @unchecked Sendable {
         handoffRepository: HandoffRepository,
         eventRepository: EventRepository,
         inboxRepository: InboxRepository,
+        notificationRepository: NotificationRepository,
+        eventStream: EventStream = EventStream(),
         authToken: AuthToken
     ) {
         self.projectRepository = projectRepository
@@ -31,6 +35,8 @@ public final class AppEnvironment: @unchecked Sendable {
         self.handoffRepository = handoffRepository
         self.eventRepository = eventRepository
         self.inboxRepository = inboxRepository
+        self.notificationRepository = notificationRepository
+        self.eventStream = eventStream
         self.authToken = authToken
     }
 
