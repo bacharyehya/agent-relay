@@ -58,6 +58,25 @@ public enum AppMigrations {
             }
         }
 
+        migrator.registerMigration("v2_search_and_events") { db in
+            try db.create(table: "events") { table in
+                table.column("id", .text).notNull().primaryKey()
+                table.column("type", .text).notNull()
+                table.column("project_id", .text).references("projects", column: "id", onDelete: .setNull)
+                table.column("thread_id", .text).references("threads", column: "id", onDelete: .setNull)
+                table.column("handoff_id", .text).references("handoffs", column: "id", onDelete: .setNull)
+                table.column("actor_id", .text)
+                table.column("body", .text).notNull()
+                table.column("created_at", .datetime).notNull()
+            }
+
+            try db.create(virtualTable: "search_index", using: FTS5()) { table in
+                table.column("object_id")
+                table.column("object_type")
+                table.column("body")
+            }
+        }
+
         return migrator
     }
 }
