@@ -1,0 +1,15 @@
+name: AgentRelay
+options:
+  bundleIdPrefix: com.bash
+packages:
+  AgentRelayPackage:
+    path: .
+targets:
+  AgentRelayMac:
+    type: application
+    platform: macOS
+    sources:
+      - App/MacApp
+    dependencies:
+      - package: AgentRelayPackage
+        product: AppCore
