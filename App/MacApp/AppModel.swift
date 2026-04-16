@@ -64,6 +64,7 @@ final class AppModel {
 enum SidebarSelection: String, CaseIterable, Identifiable {
     case inbox
     case recents
+    case search
     case projects
     case agents
     case settings

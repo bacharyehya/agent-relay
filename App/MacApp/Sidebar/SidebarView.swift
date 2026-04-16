@@ -20,6 +20,8 @@ private extension SidebarSelection {
             return "Inbox"
         case .recents:
             return "Recents"
+        case .search:
+            return "Search"
         case .projects:
             return "Projects"
         case .agents:
@@ -35,6 +37,8 @@ private extension SidebarSelection {
             return "tray.full"
         case .recents:
             return "clock.arrow.circlepath"
+        case .search:
+            return "magnifyingglass"
         case .projects:
             return "square.grid.2x2"
         case .agents:

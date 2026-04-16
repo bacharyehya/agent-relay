@@ -73,6 +73,7 @@ public enum HandoffRoutes {
             )
 
             try environment.handoffRepository.create(handoff)
+            try environment.searchRepository.index(handoff: handoff)
             let event = Event(
                 id: UUID().uuidString.lowercased(),
                 type: .handoffCreated,
@@ -101,6 +102,7 @@ public enum HandoffRoutes {
             try handoff.transition(to: payload.status)
             handoff.resolution = payload.resolution ?? handoff.resolution
             try environment.handoffRepository.update(handoff)
+            try environment.searchRepository.index(handoff: handoff)
 
             let eventType: EventType
             switch payload.status {

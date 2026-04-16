@@ -11,9 +11,18 @@ struct AgentRelayMacApp: App {
             NavigationSplitView {
                 SidebarView(selection: $bindableModel.selection)
             } detail: {
-                if model.selection == .projects {
-                    ProjectDetailView(client: AppAPIClient(), projectID: "project-api")
-                } else {
+                switch model.selection ?? .inbox {
+                case .inbox:
+                    InboxView(client: model.client)
+                case .recents:
+                    RecentsView(client: model.client)
+                case .search:
+                    SearchView(client: model.client)
+                case .projects:
+                    ProjectDetailView(client: model.client, projectID: "project-api")
+                case .agents:
+                    AgentListView()
+                case .settings:
                     VStack(alignment: .leading, spacing: 16) {
                         ServiceStatusView(state: model.serviceState)
                         Text(detailText(for: model.selection))
@@ -34,9 +43,11 @@ struct AgentRelayMacApp: App {
     private func detailText(for selection: SidebarSelection?) -> String {
         switch selection ?? .inbox {
         case .inbox:
-            return "Select Inbox, Recents, or a Project"
+            return "Inbox handoffs will appear here."
         case .recents:
             return "Recent collaboration activity will appear here."
+        case .search:
+            return "Search across handoffs and messages."
         case .projects:
             return "Project workspaces will appear here."
         case .agents:

@@ -3,26 +3,31 @@ import XCTest
 @testable import MacAppSupport
 
 @MainActor
-final class ProjectDetailViewModelTests: XCTestCase {
-    func test_project_detail_loads_threads_for_selected_project() async throws {
-        let client = StubAppAPIClient(projectThreads: [.example(title: "Webhook auth bug")])
-        let model = ProjectDetailViewModel(client: client, projectID: "shield")
+final class InboxViewModelTests: XCTestCase {
+    func test_inbox_sorts_blocked_handoffs_before_recent_responses() async throws {
+        let client = StubAppAPIClient(
+            inboxItems: [
+                Handoff.example(id: "handoff-responded", status: .responded),
+                Handoff.example(id: "handoff-blocked", status: .blocked),
+            ]
+        )
+        let model = InboxViewModel(client: client)
 
         await model.load()
 
-        XCTAssertEqual(model.threads.first?.title, "Webhook auth bug")
+        XCTAssertEqual(model.items.first?.status, .blocked)
     }
 }
 
 private struct StubAppAPIClient: AppAPIClientProtocol {
-    let projectThreads: [AppCore.Thread]
+    let inboxItems: [Handoff]
 
     func fetchHealth() async throws -> AppHealth {
         AppHealth(status: "ok")
     }
 
     func fetchInbox(actorID: String) async throws -> [Handoff] {
-        []
+        inboxItems
     }
 
     func fetchRecents() async throws -> [AppRecentItem] {
@@ -38,7 +43,7 @@ private struct StubAppAPIClient: AppAPIClientProtocol {
     }
 
     func fetchProjectThreads(projectID: String) async throws -> [AppCore.Thread] {
-        projectThreads
+        []
     }
 
     func fetchThreadContext(threadID: String, mode: String) async throws -> AppThreadContext {

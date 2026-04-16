@@ -13,6 +13,41 @@ private struct PreviewAppAPIClient: AppAPIClientProtocol {
         AppHealth(status: "ok")
     }
 
+    func fetchInbox(actorID: String) async throws -> [Handoff] {
+        [
+            Handoff.example(id: "handoff-preview-blocked", status: .blocked, title: "Confirm missing scope"),
+            Handoff.example(id: "handoff-preview-open", status: .open, title: "Patch webhook auth"),
+        ]
+    }
+
+    func fetchRecents() async throws -> [AppRecentItem] {
+        [
+            AppRecentItem(
+                eventID: "event-preview-1",
+                type: .handoffBlocked,
+                threadID: "thread-api",
+                handoffID: "handoff-preview-blocked",
+                body: "Blocked waiting on token scope confirmation.",
+                createdAt: .now
+            )
+        ]
+    }
+
+    func search(query: String) async throws -> [AppSearchResult] {
+        [
+            AppSearchResult(
+                objectID: "handoff-preview-open",
+                objectType: "handoff",
+                body: "Patch webhook auth and confirm scope."
+            ),
+            AppSearchResult(
+                objectID: "message-preview-2",
+                objectType: "message",
+                body: "Root cause is a stale token scope."
+            ),
+        ]
+    }
+
     func fetchProjects() async throws -> [Project] {
         [Project.example(id: "project-api")]
     }

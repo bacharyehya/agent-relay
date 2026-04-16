@@ -19,6 +19,18 @@ private struct StubAppAPIClient: AppAPIClientProtocol {
         AppHealth(status: "ok")
     }
 
+    func fetchInbox(actorID: String) async throws -> [Handoff] {
+        []
+    }
+
+    func fetchRecents() async throws -> [AppRecentItem] {
+        []
+    }
+
+    func search(query: String) async throws -> [AppSearchResult] {
+        []
+    }
+
     func fetchProjects() async throws -> [Project] {
         []
     }

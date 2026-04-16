@@ -2,7 +2,7 @@ import AppCore
 import Foundation
 import GRDB
 
-public struct SearchResult: Equatable, Sendable {
+public struct SearchResult: Codable, Equatable, Sendable {
     public var objectID: String
     public var objectType: String
     public var body: String

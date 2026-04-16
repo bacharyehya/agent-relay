@@ -8,6 +8,7 @@ extension AppCore.Thread: ResponseCodable {}
 extension Message: ResponseCodable {}
 extension Handoff: ResponseCodable {}
 extension RecentItem: ResponseCodable {}
+extension SearchResult: ResponseCodable {}
 extension ThreadContext: ResponseCodable {}
 
 public final class AppEnvironment: @unchecked Sendable {
@@ -17,6 +18,7 @@ public final class AppEnvironment: @unchecked Sendable {
     public let eventRepository: EventRepository
     public let inboxRepository: InboxRepository
     public let notificationRepository: NotificationRepository
+    public let searchRepository: SearchRepository
     public let eventStream: EventStream
     public let authToken: AuthToken
 
@@ -27,6 +29,7 @@ public final class AppEnvironment: @unchecked Sendable {
         eventRepository: EventRepository,
         inboxRepository: InboxRepository,
         notificationRepository: NotificationRepository,
+        searchRepository: SearchRepository,
         eventStream: EventStream = EventStream(),
         authToken: AuthToken
     ) {
@@ -36,6 +39,7 @@ public final class AppEnvironment: @unchecked Sendable {
         self.eventRepository = eventRepository
         self.inboxRepository = inboxRepository
         self.notificationRepository = notificationRepository
+        self.searchRepository = searchRepository
         self.eventStream = eventStream
         self.authToken = authToken
     }
@@ -57,6 +61,7 @@ public enum CoreAPIApp {
         ProjectRoutes.register(on: router, environment: environment)
         ThreadRoutes.register(on: router, environment: environment)
         HandoffRoutes.register(on: router, environment: environment)
+        SearchRoutes.register(on: router, environment: environment)
 
         return Application(
             router: router,

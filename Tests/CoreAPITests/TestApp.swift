@@ -95,6 +95,11 @@ enum TestApp {
         }
         try HandoffRepository(databaseQueue).create(openHandoff)
         try HandoffRepository(databaseQueue).create(blockedHandoff)
+        let searchRepository = SearchRepository(databaseQueue)
+        try searchRepository.index(message: firstMessage)
+        try searchRepository.index(message: secondMessage)
+        try searchRepository.index(handoff: openHandoff)
+        try searchRepository.index(handoff: blockedHandoff)
         try EventRepository(databaseQueue).record(
             Event(
                 id: "event-api-1",
@@ -127,6 +132,7 @@ enum TestApp {
             eventRepository: EventRepository(databaseQueue),
             inboxRepository: InboxRepository(databaseQueue),
             notificationRepository: NotificationRepository(databaseQueue),
+            searchRepository: searchRepository,
             authToken: AuthToken(token)
         )
         return CoreAPIApp.makeApplication(environment: environment)

@@ -18,6 +18,7 @@ struct CoreServiceMain {
             eventRepository: EventRepository(databaseQueue),
             inboxRepository: InboxRepository(databaseQueue),
             notificationRepository: NotificationRepository(databaseQueue),
+            searchRepository: SearchRepository(databaseQueue),
             authToken: AuthToken(authToken)
         )
         let app = CoreAPIApp.makeApplication(environment: environment)

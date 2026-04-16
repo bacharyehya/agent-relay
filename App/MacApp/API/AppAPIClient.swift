@@ -10,6 +10,25 @@ struct AppHealth: Codable, Equatable, Sendable {
     let status: String
 }
 
+struct AppRecentItem: Codable, Equatable, Identifiable, Sendable {
+    let eventID: String
+    let type: EventType
+    let threadID: String?
+    let handoffID: String?
+    let body: String
+    let createdAt: Date
+
+    var id: String { eventID }
+}
+
+struct AppSearchResult: Codable, Equatable, Identifiable, Sendable {
+    let objectID: String
+    let objectType: String
+    let body: String
+
+    var id: String { "\(objectType):\(objectID)" }
+}
+
 struct AppThreadContext: Codable, Equatable, Sendable {
     let thread: AppCore.Thread
     let messages: [Message]
@@ -34,6 +53,9 @@ private struct AppUpdateHandoffRequest: Codable, Sendable {
 
 protocol AppAPIClientProtocol: Sendable {
     func fetchHealth() async throws -> AppHealth
+    func fetchInbox(actorID: String) async throws -> [Handoff]
+    func fetchRecents() async throws -> [AppRecentItem]
+    func search(query: String) async throws -> [AppSearchResult]
     func fetchProjects() async throws -> [Project]
     func fetchProjectThreads(projectID: String) async throws -> [AppCore.Thread]
     func fetchThreadContext(threadID: String, mode: String) async throws -> AppThreadContext
@@ -58,6 +80,23 @@ struct AppAPIClient: AppAPIClientProtocol {
 
     func fetchHealth() async throws -> AppHealth {
         try await decode(path: "health", method: "GET")
+    }
+
+    func fetchInbox(actorID: String) async throws -> [Handoff] {
+        try await decode(path: "inbox/\(actorID)", method: "GET")
+    }
+
+    func fetchRecents() async throws -> [AppRecentItem] {
+        try await decode(path: "recents", method: "GET")
+    }
+
+    func search(query: String) async throws -> [AppSearchResult] {
+        var components = URLComponents(url: baseURL.appending(path: "search"), resolvingAgainstBaseURL: false)
+        components?.queryItems = [URLQueryItem(name: "q", value: query)]
+        guard let url = components?.url else {
+            throw AppAPIClientError.invalidResponse
+        }
+        return try await decode(url: url, method: "GET")
     }
 
     func fetchProjects() async throws -> [Project] {
