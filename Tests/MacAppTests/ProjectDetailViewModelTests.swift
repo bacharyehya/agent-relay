@@ -12,10 +12,30 @@ final class ProjectDetailViewModelTests: XCTestCase {
 
         XCTAssertEqual(model.threads.first?.title, "Webhook auth bug")
     }
+
+    func test_project_detail_load_records_error_when_thread_fetch_fails() async {
+        let client = StubAppAPIClient(
+            projectThreads: [],
+            projectThreadsError: URLError(.cannotConnectToHost)
+        )
+        let model = ProjectDetailViewModel(client: client, projectID: "shield")
+
+        await model.load()
+
+        XCTAssertEqual(model.threads, [])
+        XCTAssertNil(model.threadContext)
+        XCTAssertNotNil(model.errorMessage)
+    }
 }
 
 private struct StubAppAPIClient: AppAPIClientProtocol {
     let projectThreads: [AppCore.Thread]
+    let projectThreadsError: Error?
+
+    init(projectThreads: [AppCore.Thread], projectThreadsError: Error? = nil) {
+        self.projectThreads = projectThreads
+        self.projectThreadsError = projectThreadsError
+    }
 
     func fetchHealth() async throws -> AppHealth {
         AppHealth(status: "ok")
@@ -38,7 +58,10 @@ private struct StubAppAPIClient: AppAPIClientProtocol {
     }
 
     func fetchProjectThreads(projectID: String) async throws -> [AppCore.Thread] {
-        projectThreads
+        if let projectThreadsError {
+            throw projectThreadsError
+        }
+        return projectThreads
     }
 
     func fetchThreadContext(threadID: String, mode: String) async throws -> AppThreadContext {

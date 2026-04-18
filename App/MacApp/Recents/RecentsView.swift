@@ -8,29 +8,39 @@ struct RecentsView: View {
     }
 
     var body: some View {
-        HSplitView {
-            List(model.recentItems) { item in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(item.body)
-                        .font(.headline)
-                    Text(item.type.rawValue)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    Task {
-                        await model.selectThread(id: item.threadID)
+        Group {
+            if let errorMessage = model.errorMessage, model.recentItems.isEmpty {
+                ContentUnavailableView(
+                    "Recents Unavailable",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(errorMessage)
+                )
+            } else {
+                HSplitView {
+                    List(model.recentItems) { item in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(item.body)
+                                .font(.headline)
+                            Text(item.type.rawValue)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            Task {
+                                await model.selectThread(id: item.threadID)
+                            }
+                        }
                     }
+                    .navigationTitle("Recents")
+
+                    ThreadDetailView(
+                        client: model.client,
+                        threadID: model.selectedThreadID,
+                        seedContext: model.selectedThreadContext
+                    )
                 }
             }
-            .navigationTitle("Recents")
-
-            ThreadDetailView(
-                client: model.client,
-                threadID: model.selectedThreadID,
-                seedContext: model.selectedThreadContext
-            )
         }
         .task {
             await model.loadRecents()

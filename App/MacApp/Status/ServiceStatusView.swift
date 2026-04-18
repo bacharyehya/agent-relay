@@ -36,7 +36,7 @@ private extension AppModel.ServiceState {
         case .healthy:
             return "The background service is responding."
         case .degraded:
-            return "The app could not reach the background service."
+            return "The app could not reach the background service. Start CoreService during development or bundle the helper."
         }
     }
 }

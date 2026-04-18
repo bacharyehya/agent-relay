@@ -7,6 +7,7 @@ final class ThreadDetailViewModel {
     let client: any AppAPIClientProtocol
     let threadID: String
     var threadContext: AppThreadContext?
+    var errorMessage: String?
 
     init(
         client: any AppAPIClientProtocol,
@@ -29,8 +30,10 @@ final class ThreadDetailViewModel {
 
         do {
             threadContext = try await client.fetchThreadContext(threadID: threadID, mode: "recent")
+            errorMessage = nil
         } catch {
             threadContext = nil
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -50,7 +53,7 @@ final class ThreadDetailViewModel {
         await updateHandoff(id: id, status: .resolved, resolution: nil)
     }
 
-    func createHandoff(title: String, summary: String, ask: String) async {
+    func createHandoff(title: String, summary: String, ask: String, assignedTo: String) async {
         guard await ensureContextLoaded() else {
             return
         }
@@ -64,12 +67,14 @@ final class ThreadDetailViewModel {
                     ask: ask,
                     priority: .medium,
                     createdBy: "human",
-                    assignedTo: "chatgpt",
+                    assignedTo: assignedTo,
                     sourceRefs: []
                 )
             )
             threadContext?.handoffs.insert(handoff, at: 0)
+            errorMessage = nil
         } catch {
+            errorMessage = error.localizedDescription
             return
         }
     }
@@ -82,7 +87,9 @@ final class ThreadDetailViewModel {
         do {
             let updated = try await client.updateHandoff(id: id, status: status, resolution: resolution)
             replace(updated)
+            errorMessage = nil
         } catch {
+            errorMessage = error.localizedDescription
             return
         }
     }

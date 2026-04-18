@@ -56,6 +56,17 @@ struct CoreAPIClient: CoreAPIClientProtocol {
         self.session = session
     }
 
+    static func live(
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        session: URLSession = .shared
+    ) throws -> CoreAPIClient {
+        try CoreAPIClient(
+            baseURL: AppRuntimeConfiguration.coreServiceURL(environment: environment),
+            authToken: AppRuntimeConfiguration.loadOrCreateAuthToken(environment: environment),
+            session: session
+        )
+    }
+
     func listInbox(actorID: String) async throws -> [Handoff] {
         try await decode(path: "inbox/\(actorID)", method: "GET")
     }

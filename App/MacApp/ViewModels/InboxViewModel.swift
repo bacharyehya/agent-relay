@@ -12,8 +12,9 @@ final class InboxViewModel {
     var searchResults: [AppSearchResult] = []
     var selectedThreadID: String?
     var selectedThreadContext: AppThreadContext?
+    var errorMessage: String?
 
-    init(client: any AppAPIClientProtocol, actorID: String = "chatgpt") {
+    init(client: any AppAPIClientProtocol, actorID: String = "human") {
         self.client = client
         self.actorID = actorID
     }
@@ -22,6 +23,7 @@ final class InboxViewModel {
         do {
             let inbox = try await client.fetchInbox(actorID: actorID)
             items = inbox.sorted(by: isHigherPriority(_:_:))
+            errorMessage = nil
             if let first = items.first {
                 await selectThread(id: first.threadID)
             } else {
@@ -32,14 +34,17 @@ final class InboxViewModel {
             items = []
             selectedThreadID = nil
             selectedThreadContext = nil
+            errorMessage = error.localizedDescription
         }
     }
 
     func loadRecents() async {
         do {
             recentItems = try await client.fetchRecents()
+            errorMessage = nil
         } catch {
             recentItems = []
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -47,13 +52,16 @@ final class InboxViewModel {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             searchResults = []
+            errorMessage = nil
             return
         }
 
         do {
             searchResults = try await client.search(query: trimmed)
+            errorMessage = nil
         } catch {
             searchResults = []
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -67,8 +75,10 @@ final class InboxViewModel {
         selectedThreadID = id
         do {
             selectedThreadContext = try await client.fetchThreadContext(threadID: id, mode: "recent")
+            errorMessage = nil
         } catch {
             selectedThreadContext = nil
+            errorMessage = error.localizedDescription
         }
     }
 

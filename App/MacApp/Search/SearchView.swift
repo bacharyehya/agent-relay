@@ -26,14 +26,22 @@ struct SearchView: View {
                 }
             }
 
-            List(model.searchResults) { result in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(result.objectType.capitalized)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(result.body)
-                        .font(.body)
-                        .lineLimit(3)
+            if let errorMessage = model.errorMessage, model.searchResults.isEmpty {
+                ContentUnavailableView(
+                    "Search Unavailable",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(errorMessage)
+                )
+            } else {
+                List(model.searchResults) { result in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(result.objectType.capitalized)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(result.body)
+                            .font(.body)
+                            .lineLimit(3)
+                    }
                 }
             }
         }

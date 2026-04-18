@@ -12,21 +12,31 @@ struct ProjectDetailView: View {
     var body: some View {
         @Bindable var bindableModel = model
 
-        HSplitView {
-            ThreadListView(
-                threads: model.threads,
-                selection: $bindableModel.selectedThreadID
-            ) { thread in
-                Task {
-                    await model.selectThread(thread)
+        Group {
+            if let errorMessage = model.errorMessage, model.threads.isEmpty {
+                ContentUnavailableView(
+                    "Project Unavailable",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(errorMessage)
+                )
+            } else {
+                HSplitView {
+                    ThreadListView(
+                        threads: model.threads,
+                        selection: $bindableModel.selectedThreadID
+                    ) { thread in
+                        Task {
+                            await model.selectThread(thread)
+                        }
+                    }
+
+                    ThreadDetailView(
+                        client: client,
+                        threadID: model.selectedThreadID,
+                        seedContext: model.threadContext
+                    )
                 }
             }
-
-            ThreadDetailView(
-                client: client,
-                threadID: model.selectedThreadID,
-                seedContext: model.threadContext
-            )
         }
         .task {
             await model.load()

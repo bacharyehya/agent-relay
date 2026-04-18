@@ -6,6 +6,21 @@ enum AppAPIClientError: Error {
     case httpStatus(Int, String)
 }
 
+extension AppAPIClientError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .invalidResponse:
+            return "The local core service returned an invalid response."
+        case let .httpStatus(statusCode, body):
+            let trimmedBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmedBody.isEmpty {
+                return "The local core service responded with status \(statusCode)."
+            }
+            return "The local core service responded with status \(statusCode): \(trimmedBody)"
+        }
+    }
+}
+
 struct AppHealth: Codable, Equatable, Sendable {
     let status: String
 }
@@ -69,13 +84,24 @@ struct AppAPIClient: AppAPIClientProtocol {
     let session: URLSession
 
     init(
-        baseURL: URL = URL(string: "http://127.0.0.1:8080")!,
-        authToken: String = ProcessInfo.processInfo.environment["AGENT_RELAY_AUTH_TOKEN"] ?? "dev-token",
+        baseURL: URL,
+        authToken: String,
         session: URLSession = .shared
     ) {
         self.baseURL = baseURL
         self.authToken = authToken
         self.session = session
+    }
+
+    static func live(
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        session: URLSession = .shared
+    ) throws -> AppAPIClient {
+        try AppAPIClient(
+            baseURL: AppRuntimeConfiguration.coreServiceURL(environment: environment),
+            authToken: AppRuntimeConfiguration.loadOrCreateAuthToken(environment: environment),
+            session: session
+        )
     }
 
     func fetchHealth() async throws -> AppHealth {

@@ -1,3 +1,4 @@
+import AppCore
 import CoreAPI
 import CoreStore
 import Foundation
@@ -6,11 +7,12 @@ import Foundation
 struct CoreServiceMain {
     static func main() async throws {
         let environmentVariables = ProcessInfo.processInfo.environment
-        let databasePath = environmentVariables["AGENT_RELAY_DB_PATH"]
-            ?? (FileManager.default.currentDirectoryPath + "/agent-relay.sqlite")
-        let authToken = environmentVariables["AGENT_RELAY_AUTH_TOKEN"] ?? "dev-token"
+        let databaseURL = try AppRuntimeConfiguration.databaseURL(environment: environmentVariables)
+        let authToken = try AppRuntimeConfiguration.loadOrCreateAuthToken(environment: environmentVariables)
+        let host = environmentVariables["AGENT_RELAY_CORE_HOST"] ?? AppRuntimeConfiguration.defaultCoreHost
+        let port = Int(environmentVariables["AGENT_RELAY_CORE_PORT"] ?? "") ?? AppRuntimeConfiguration.defaultCorePort
 
-        let databaseQueue = try AppDatabase.makeDatabaseQueue(path: databasePath)
+        let databaseQueue = try AppDatabase.makeDatabaseQueue(path: databaseURL.path())
         let environment = AppEnvironment(
             projectRepository: ProjectRepository(databaseQueue),
             threadRepository: ThreadRepository(databaseQueue),
@@ -21,7 +23,11 @@ struct CoreServiceMain {
             searchRepository: SearchRepository(databaseQueue),
             authToken: AuthToken(authToken)
         )
-        let app = CoreAPIApp.makeApplication(environment: environment)
+        let app = CoreAPIApp.makeApplication(
+            environment: environment,
+            host: host,
+            port: port
+        )
 
         try await app.runService()
     }

@@ -1,6 +1,6 @@
 name: AgentRelay
 options:
-  bundleIdPrefix: com.bash
+  bundleIdPrefix: io.agentrelay
 packages:
   AgentRelayPackage:
     path: .

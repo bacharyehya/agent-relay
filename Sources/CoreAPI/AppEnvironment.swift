@@ -53,7 +53,9 @@ public final class AppEnvironment: @unchecked Sendable {
 
 public enum CoreAPIApp {
     public static func makeApplication(
-        environment: AppEnvironment
+        environment: AppEnvironment,
+        host: String = AppRuntimeConfiguration.defaultCoreHost,
+        port: Int = AppRuntimeConfiguration.defaultCorePort
     ) -> Application<RouterResponder<BasicRequestContext>> {
         let router = Router(context: BasicRequestContext.self)
 
@@ -66,7 +68,7 @@ public enum CoreAPIApp {
         return Application(
             router: router,
             configuration: .init(
-                address: .hostname(port: 8080),
+                address: .hostname(host, port: port),
                 serverName: "AgentRelayCore"
             )
         )

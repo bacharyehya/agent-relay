@@ -46,49 +46,68 @@ private struct ThreadDetailContentView: View {
                     .font(.title2)
                     .fontWeight(.semibold)
 
-                HandoffComposerView { title, summary, ask in
-                    Task {
-                        await model.createHandoff(title: title, summary: summary, ask: ask)
-                    }
-                }
-
-                if let context = model.threadContext {
-                    VStack(alignment: .leading, spacing: 12) {
-                        ForEach(context.messages) { message in
-                            MessageRowView(message: message)
+                if let errorMessage = model.errorMessage, model.threadContext == nil {
+                    ContentUnavailableView(
+                        "Thread Unavailable",
+                        systemImage: "exclamationmark.triangle",
+                        description: Text(errorMessage)
+                    )
+                } else {
+                    HandoffComposerView { title, summary, ask, assignedTo in
+                        Task {
+                            await model.createHandoff(
+                                title: title,
+                                summary: summary,
+                                ask: ask,
+                                assignedTo: assignedTo
+                            )
                         }
                     }
 
-                    if !model.handoffs.isEmpty {
-                        Divider()
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Handoffs")
-                                .font(.headline)
+                    if let errorMessage = model.errorMessage {
+                        Text(errorMessage)
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                    }
 
-                            ForEach(model.handoffs) { handoff in
-                                HandoffCardView(
-                                    handoff: handoff,
-                                    onAccept: {
-                                        Task {
-                                            await model.acceptHandoff(id: handoff.id)
+                    if let context = model.threadContext {
+                        VStack(alignment: .leading, spacing: 12) {
+                            ForEach(context.messages) { message in
+                                MessageRowView(message: message)
+                            }
+                        }
+
+                        if !model.handoffs.isEmpty {
+                            Divider()
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Handoffs")
+                                    .font(.headline)
+
+                                ForEach(model.handoffs) { handoff in
+                                    HandoffCardView(
+                                        handoff: handoff,
+                                        onAccept: {
+                                            Task {
+                                                await model.acceptHandoff(id: handoff.id)
+                                            }
+                                        },
+                                        onBlock: {
+                                            Task {
+                                                await model.blockHandoff(id: handoff.id)
+                                            }
+                                        },
+                                        onRespond: { body in
+                                            Task {
+                                                await model.respondHandoff(id: handoff.id, body: body)
+                                            }
+                                        },
+                                        onResolve: {
+                                            Task {
+                                                await model.resolveHandoff(id: handoff.id)
+                                            }
                                         }
-                                    },
-                                    onBlock: {
-                                        Task {
-                                            await model.blockHandoff(id: handoff.id)
-                                        }
-                                    },
-                                    onRespond: { body in
-                                        Task {
-                                            await model.respondHandoff(id: handoff.id, body: body)
-                                        }
-                                    },
-                                    onResolve: {
-                                        Task {
-                                            await model.resolveHandoff(id: handoff.id)
-                                        }
-                                    }
-                                )
+                                    )
+                                }
                             }
                         }
                     }

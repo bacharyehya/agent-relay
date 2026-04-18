@@ -12,9 +12,47 @@ final class ThreadDetailViewModelTests: XCTestCase {
 
         XCTAssertEqual(model.handoffs.first?.status, .accepted)
     }
+
+    func test_create_handoff_uses_requested_target_actor() async throws {
+        let recorder = CreateHandoffRecorder()
+        let client = StubAppAPIClient(createRecorder: recorder)
+        let model = ThreadDetailViewModel(client: client, threadID: "thread-1")
+
+        await model.createHandoff(
+            title: "Need help",
+            summary: "Summarize the blocker",
+            ask: "Review the failing route",
+            assignedTo: "claude"
+        )
+
+        let request = await recorder.lastRequest
+        XCTAssertEqual(request?.assignedTo, "claude")
+    }
+
+    func test_create_handoff_records_error_when_request_fails() async {
+        let client = StubAppAPIClient(createError: AppAPIClientError.httpStatus(401, "Missing bearer token"))
+        let model = ThreadDetailViewModel(client: client, threadID: "thread-1")
+
+        await model.createHandoff(
+            title: "Need help",
+            summary: "Summarize the blocker",
+            ask: "Review the failing route",
+            assignedTo: "claude"
+        )
+
+        XCTAssertNotNil(model.errorMessage)
+    }
 }
 
 private struct StubAppAPIClient: AppAPIClientProtocol {
+    let createRecorder: CreateHandoffRecorder?
+    let createError: Error?
+
+    init(createRecorder: CreateHandoffRecorder? = nil, createError: Error? = nil) {
+        self.createRecorder = createRecorder
+        self.createError = createError
+    }
+
     func fetchHealth() async throws -> AppHealth {
         AppHealth(status: "ok")
     }
@@ -48,7 +86,11 @@ private struct StubAppAPIClient: AppAPIClientProtocol {
     }
 
     func createHandoff(_ request: AppCreateHandoffRequest) async throws -> Handoff {
-        Handoff(
+        if let createError {
+            throw createError
+        }
+        await createRecorder?.record(request)
+        return Handoff(
             id: "handoff-created",
             threadID: request.threadID,
             title: request.title,
@@ -65,5 +107,13 @@ private struct StubAppAPIClient: AppAPIClientProtocol {
         var handoff = Handoff.example(id: id, status: status)
         handoff.resolution = resolution
         return handoff
+    }
+}
+
+actor CreateHandoffRecorder {
+    private(set) var lastRequest: AppCreateHandoffRequest?
+
+    func record(_ request: AppCreateHandoffRequest) {
+        lastRequest = request
     }
 }

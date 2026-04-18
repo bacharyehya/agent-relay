@@ -9,6 +9,7 @@ final class ProjectDetailViewModel {
     var threads: [AppCore.Thread] = []
     var selectedThreadID: String?
     var threadContext: AppThreadContext?
+    var errorMessage: String?
 
     init(client: any AppAPIClientProtocol, projectID: String) {
         self.client = client
@@ -18,13 +19,19 @@ final class ProjectDetailViewModel {
     func load() async {
         do {
             threads = try await client.fetchProjectThreads(projectID: projectID)
+            errorMessage = nil
             if let firstThread = threads.first {
                 selectedThreadID = firstThread.id
                 threadContext = try await client.fetchThreadContext(threadID: firstThread.id, mode: "recent")
+            } else {
+                selectedThreadID = nil
+                threadContext = nil
             }
         } catch {
             threads = []
+            selectedThreadID = nil
             threadContext = nil
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -32,8 +39,10 @@ final class ProjectDetailViewModel {
         selectedThreadID = thread.id
         do {
             threadContext = try await client.fetchThreadContext(threadID: thread.id, mode: "recent")
+            errorMessage = nil
         } catch {
             threadContext = nil
+            errorMessage = error.localizedDescription
         }
     }
 }
