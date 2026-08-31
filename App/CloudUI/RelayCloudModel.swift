@@ -6,6 +6,23 @@ import RelayCloudClient
 @MainActor
 @Observable
 public final class RelayCloudModel {
+    private enum AgentHostEnrollmentError: LocalizedError {
+        case unavailable
+        case humanInvitation
+        case missingRoom
+
+        var errorDescription: String? {
+            switch self {
+            case .unavailable:
+                "Install and open Agent Relay Host to connect a Codex agent on this Mac."
+            case .humanInvitation:
+                "That code is for a human device. Create an Agent invitation instead."
+            case .missingRoom:
+                "The invitation did not include a room for the agent to watch."
+            }
+        }
+    }
+
     public enum Phase: Equatable {
         case checking
         case signedOut
@@ -35,14 +52,21 @@ public final class RelayCloudModel {
     public var activeInvitation: RelayInvitation?
     public var localAgentSetupMessage: String?
     public var localAgentsInstalled = false
+    public var localAgentIDs: [String] = []
+    public var agentHostSetupMessage: String?
+    public let allowsLocalAgentHosting: Bool
 
     private let store: RelaySessionStore
     private var api: RelayCloudAPI?
     private var cursor = 0
     private var syncTask: Task<Void, Never>?
 
-    public init(store: RelaySessionStore = .live) {
+    public init(
+        store: RelaySessionStore = .live,
+        allowsLocalAgentHosting: Bool = false
+    ) {
         self.store = store
+        self.allowsLocalAgentHosting = allowsLocalAgentHosting
     }
 
     public func restore() async {
@@ -82,6 +106,47 @@ public final class RelayCloudModel {
     public func join(serverURL: String, code: String, deviceName: String) async {
         await performEnrollment(serverURL: serverURL, deviceName: deviceName) { api in
             try await api.enroll(code: code, deviceName: deviceName)
+        }
+    }
+
+    public func joinAgentHost(serverURL: String, code: String, deviceName: String) async {
+        isWorking = true
+        connectionState = .connecting
+        defer { isWorking = false }
+        do {
+            guard allowsLocalAgentHosting else {
+                throw AgentHostEnrollmentError.unavailable
+            }
+            guard let url = Self.normalizedServerURL(serverURL) else {
+                throw RelayCloudError.invalidServerURL
+            }
+            if let existing = try RelayCloudAgentInstaller.load(), existing.serverURL != url {
+                throw RelayCloudAgentInstallerError.differentRelayAlreadyConfigured
+            }
+            let unsignedAPI = try RelayCloudAPI(baseURL: url)
+            _ = try await unsignedAPI.health()
+            let envelope = try await unsignedAPI.enroll(code: code, deviceName: deviceName)
+            guard envelope.actor.type == .agent else {
+                throw AgentHostEnrollmentError.humanInvitation
+            }
+            guard let room = envelope.room else {
+                throw AgentHostEnrollmentError.missingRoom
+            }
+            _ = try RelayCloudAgentInstaller.install(
+                serverURL: url,
+                roomID: room.id,
+                actorID: envelope.actor.id,
+                token: envelope.token
+            )
+            UserDefaults.standard.set(url.absoluteString, forKey: "AgentRelay.Cloud.LastServerURL")
+            refreshLocalAgentInstallationState()
+            agentHostSetupMessage = "@\(envelope.actor.id) is connected on this Mac. The Host will keep it running."
+            connectionState = .connected
+            errorMessage = nil
+        } catch {
+            connectionState = .offline
+            agentHostSetupMessage = nil
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -231,6 +296,10 @@ public final class RelayCloudModel {
     }
 
     public func installLocalMacAgents() async {
+        guard allowsLocalAgentHosting else {
+            errorMessage = AgentHostEnrollmentError.unavailable.localizedDescription
+            return
+        }
         guard let api,
               let storedSession,
               let roomID = rooms.first(where: { $0.name == "general" })?.id
@@ -403,6 +472,7 @@ public final class RelayCloudModel {
     private func refreshLocalAgentInstallationState() {
         let expected = Set([RelayAgentProfile.main.id, RelayAgentProfile.research.id])
         let configured = (try? RelayCloudAgentInstaller.load())?.actorIDs ?? []
+        localAgentIDs = configured
         localAgentsInstalled = expected.isSubset(of: Set(configured))
         if localAgentsInstalled {
             localAgentSetupMessage = "Main and Research are connected on this Mac."

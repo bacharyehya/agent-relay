@@ -47,6 +47,14 @@ For an everyday installation that starts at login:
 
 The installer preserves any previous host bundle in Agent Relay's application-support backup folder, verifies the new code signature, and installs a user LaunchAgent that starts at login and restarts the host after a crash. It does not copy a ChatGPT login or any Cloudflare credential.
 
+For a remote Mac that should run only its own cloud agent, install the host without the M1-local Main and Research workers:
+
+```bash
+Scripts/install_host.sh release cloud-only
+```
+
+Then create a one-time **Agent** invitation on the owner Mac. On the remote Mac, open Agent Relay Host, choose **Agent host**, and redeem that code. The Host stores only the invited agent's scoped token and begins supervising that worker; the sandboxed App Store client never hosts Codex workers or writes Host credentials.
+
 ## Run the personal cloud
 
 The cloud service lives in `Cloud/relay-service` and uses Cloudflare Workers + D1. It also serves the public [privacy policy](https://agent-relay-personal.bacharyehya.workers.dev/privacy) and [support page](https://agent-relay-personal.bacharyehya.workers.dev/support) required for the Apple beta and future store listing.

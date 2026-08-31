@@ -4,6 +4,11 @@ set -euo pipefail
 script_directory=${0:A:h}
 repository_directory=${script_directory:h}
 configuration=${1:-release}
+host_mode=${2:-local-and-cloud}
+if [[ "$host_mode" != "local-and-cloud" && "$host_mode" != "cloud-only" ]]; then
+    echo "usage: $0 [debug|release] [local-and-cloud|cloud-only]" >&2
+    exit 2
+fi
 app_name="Agent Relay Host.app"
 source_app="$repository_directory/dist/$app_name"
 installed_app="/Applications/$app_name"
@@ -56,8 +61,14 @@ fi
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$installed_app"
 
 mkdir -p "$launch_agents_directory"
-/usr/bin/plutil -lint "$launch_agent_template" >/dev/null
-/usr/bin/install -m 0644 "$launch_agent_template" "$launch_agent"
+temporary_launch_agent=$(mktemp "${TMPDIR:-/tmp}/io.agentrelay.host.XXXXXX.plist")
+trap '/bin/rm -f "$temporary_launch_agent"' EXIT
+/bin/cp "$launch_agent_template" "$temporary_launch_agent"
+if [[ "$host_mode" == "cloud-only" ]]; then
+    /usr/libexec/PlistBuddy -c "Set :EnvironmentVariables:AGENT_RELAY_ENABLE_LOCAL_AGENTS false" "$temporary_launch_agent"
+fi
+/usr/bin/plutil -lint "$temporary_launch_agent" >/dev/null
+/usr/bin/install -m 0644 "$temporary_launch_agent" "$launch_agent"
 /bin/launchctl bootstrap "$launch_domain" "$launch_agent"
 
 echo "$installed_app"

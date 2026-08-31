@@ -16,7 +16,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: io.agentrelay.app
         PRODUCT_NAME: Agent Relay
         MARKETING_VERSION: 0.4.0
-        CURRENT_PROJECT_VERSION: 4
+        CURRENT_PROJECT_VERSION: 5
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Agent Relay
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
@@ -44,7 +44,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: io.agentrelay.app
         PRODUCT_NAME: Agent Relay
         MARKETING_VERSION: 0.4.0
-        CURRENT_PROJECT_VERSION: 4
+        CURRENT_PROJECT_VERSION: 5
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Agent Relay
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity

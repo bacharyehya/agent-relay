@@ -4,9 +4,11 @@ import RelayCloudClient
 import SwiftUI
 
 public struct RelayCloudRootView: View {
-    @State private var model = RelayCloudModel()
+    @State private var model: RelayCloudModel
 
-    public init() {}
+    public init(allowsLocalAgentHosting: Bool = false) {
+        _model = State(initialValue: RelayCloudModel(allowsLocalAgentHosting: allowsLocalAgentHosting))
+    }
 
     public var body: some View {
         Group {
@@ -43,8 +45,9 @@ private struct RelayCloudLoadingView: View {
 }
 
 private struct RelayCloudOnboardingView: View {
-    enum Mode: String, CaseIterable, Identifiable {
+    enum Mode: String, Identifiable {
         case join = "Join"
+        case agentHost = "Agent host"
         case create = "Create owner"
         var id: String { rawValue }
     }
@@ -57,6 +60,10 @@ private struct RelayCloudOnboardingView: View {
     @State private var workspaceName = "Bash's Agents"
     @State private var displayName = "Bash"
     @State private var deviceName = ProcessInfo.processInfo.hostName
+
+    private var availableModes: [Mode] {
+        model.allowsLocalAgentHosting ? [.join, .agentHost, .create] : [.join, .create]
+    }
 
     var body: some View {
         ScrollView {
@@ -73,7 +80,7 @@ private struct RelayCloudOnboardingView: View {
                 }
 
                 Picker("Setup mode", selection: $mode) {
-                    ForEach(Mode.allCases) { mode in
+                    ForEach(availableModes) { mode in
                         Text(mode.rawValue).tag(mode)
                     }
                 }
@@ -89,7 +96,7 @@ private struct RelayCloudOnboardingView: View {
                         .background(CloudRelayTheme.raised, in: RoundedRectangle(cornerRadius: 11))
                 }
 
-                if mode == .join {
+                if mode == .join || mode == .agentHost {
                     RelayOnboardingField(title: "Invitation code", placeholder: "XXXX-XXXX-XXXX-XXXX-XXXX", text: $invitationCode)
                 } else {
                     RelayOnboardingSecureField(title: "One-time bootstrap key", placeholder: "Deployment secret", text: $bootstrapKey)
@@ -98,6 +105,20 @@ private struct RelayCloudOnboardingView: View {
                 }
 
                 RelayOnboardingField(title: "This device", placeholder: "Bash's iPhone", text: $deviceName)
+
+                if mode == .agentHost {
+                    Text("Use an Agent invitation created by the Relay owner. Only that agent's revocable credential is installed; no human session or ChatGPT login is copied.")
+                        .font(.caption)
+                        .foregroundStyle(CloudRelayTheme.faint)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                if let message = model.agentHostSetupMessage {
+                    Label(message, systemImage: "checkmark.circle.fill")
+                        .font(.callout)
+                        .foregroundStyle(CloudRelayTheme.healthy)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 if let errorMessage = model.errorMessage {
                     Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
@@ -110,6 +131,8 @@ private struct RelayCloudOnboardingView: View {
                     Task {
                         if mode == .join {
                             await model.join(serverURL: serverURL, code: invitationCode, deviceName: deviceName)
+                        } else if mode == .agentHost {
+                            await model.joinAgentHost(serverURL: serverURL, code: invitationCode, deviceName: deviceName)
                         } else {
                             await model.createOwner(
                                 serverURL: serverURL,
@@ -123,14 +146,19 @@ private struct RelayCloudOnboardingView: View {
                 } label: {
                     HStack {
                         if model.isWorking { ProgressView().controlSize(.small) }
-                        Text(mode == .join ? "Join Relay" : "Create private Relay")
+                        Text(actionTitle)
                             .fontWeight(.bold)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(model.isWorking || serverURL.isEmpty || deviceName.isEmpty)
+                .disabled(
+                    model.isWorking
+                        || serverURL.isEmpty
+                        || deviceName.isEmpty
+                        || ((mode == .join || mode == .agentHost) && invitationCode.isEmpty)
+                )
 
                 Text("The cloud carries chat and presence. Codex credentials and agent execution stay on your Macs.")
                     .font(.caption)
@@ -148,6 +176,14 @@ private struct RelayCloudOnboardingView: View {
             .frame(maxWidth: .infinity)
         }
         .background(CloudRelayTheme.canvas)
+    }
+
+    private var actionTitle: String {
+        switch mode {
+        case .join: "Join Relay"
+        case .agentHost: "Connect this agent"
+        case .create: "Create private Relay"
+        }
     }
 }
 
@@ -553,6 +589,11 @@ private struct RelayInviteView: View {
                         Text("Expires \(invitation.expiresAt, style: .relative). Send it only to the device or agent you are enrolling.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                        if invitation.kind == "agent" {
+                            Text("On the other Mac, open Agent Relay Host, choose Agent host, and enter this code. The code can be used once.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
 
@@ -654,34 +695,44 @@ private struct RelayCloudSettingsView: View {
                     .foregroundStyle(model.connectionState == .connected ? CloudRelayTheme.healthy : CloudRelayTheme.warning)
                 }
                 #if os(macOS)
-                Section("Agents on this Mac") {
-                    Button {
-                        Task { await model.installLocalMacAgents() }
-                    } label: {
-                        if model.isWorking {
-                            HStack {
-                                ProgressView().controlSize(.small)
-                                Text("Connecting agents…")
+                if model.allowsLocalAgentHosting {
+                    Section("Agents on this Mac") {
+                        Button {
+                            Task { await model.installLocalMacAgents() }
+                        } label: {
+                            if model.isWorking {
+                                HStack {
+                                    ProgressView().controlSize(.small)
+                                    Text("Connecting agents…")
+                                }
+                            } else {
+                                Label(
+                                    model.localAgentsInstalled
+                                        ? "Reconnect Main + Research"
+                                        : "Connect Main + Research",
+                                    systemImage: "cpu"
+                                )
                             }
-                        } else {
-                            Label(
-                                model.localAgentsInstalled
-                                    ? "Reconnect Main + Research"
-                                    : "Connect Main + Research",
-                                systemImage: "cpu"
-                            )
                         }
-                    }
-                    .disabled(model.isWorking || model.connectionState != .connected)
+                        .disabled(model.isWorking || model.connectionState != .connected)
 
-                    if let message = model.localAgentSetupMessage {
-                        Label(message, systemImage: "checkmark.circle.fill")
+                        if let message = model.localAgentSetupMessage {
+                            Label(message, systemImage: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(CloudRelayTheme.healthy)
+                        } else {
+                            Text("Each agent receives its own revocable credential. Your human session is never copied to the workers.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if !model.localAgentIDs.isEmpty {
+                            LabeledContent(
+                                "Configured",
+                                value: model.localAgentIDs.map { "@\($0)" }.joined(separator: ", ")
+                            )
                             .font(.caption)
-                            .foregroundStyle(CloudRelayTheme.healthy)
-                    } else {
-                        Text("Each agent receives its own revocable credential. Your human session is never copied to the workers.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 #endif

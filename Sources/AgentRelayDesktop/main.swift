@@ -48,7 +48,10 @@ private final class LocalRuntime {
             attributes: [.posixPermissions: 0o700]
         )
 
-        var specs = ["codex-main", "codex-research"].map { actorID in
+        let localWorkersEnabled = !["0", "false", "no"].contains(
+            ProcessInfo.processInfo.environment["AGENT_RELAY_ENABLE_LOCAL_AGENTS"]?.lowercased() ?? "true"
+        )
+        var specs = localWorkersEnabled ? ["codex-main", "codex-research"].map { actorID in
             HelperSpec(
                 key: "local-\(actorID)",
                 executableName: "CodexRelayWorker",
@@ -60,7 +63,7 @@ private final class LocalRuntime {
                 ],
                 logName: actorID
             )
-        }
+        } : []
 
         if let configuration = try? RelayCloudAgentInstaller.load() {
             for actorID in configuration.actorIDs {

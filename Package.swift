@@ -62,6 +62,8 @@ let package = Package(
             dependencies: ["MacAppSupport", "RelayCloudClient"]
         ),
         .testTarget(name: "AppCoreTests", dependencies: ["AppCore"]),
+        .testTarget(name: "RelayCloudClientTests", dependencies: ["RelayCloudClient"]),
+        .testTarget(name: "RelayCloudUITests", dependencies: ["RelayCloudUI"]),
         .testTarget(name: "CodexAppServerTests", dependencies: ["CodexAppServer"]),
         .testTarget(
             name: "CodexRelayWorkerTests",

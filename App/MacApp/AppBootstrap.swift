@@ -15,7 +15,7 @@ public struct AgentRelayRootView: View {
     public var body: some View {
         Group {
             if appMode == "cloud" {
-                RelayCloudRootView()
+                RelayCloudRootView(allowsLocalAgentHosting: true)
             } else {
                 localWorkspace
             }

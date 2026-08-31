@@ -17,6 +17,11 @@
     </dict>
     <key>ThrottleInterval</key>
     <integer>5</integer>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>AGENT_RELAY_ENABLE_LOCAL_AGENTS</key>
+        <string>true</string>
+    </dict>
     <key>ProcessType</key>
     <string>Interactive</string>
     <key>StandardOutPath</key>
