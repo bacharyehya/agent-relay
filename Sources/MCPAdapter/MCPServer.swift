@@ -12,6 +12,7 @@ final class MCPServer {
     private let listRecentsTool: ListRecentsTool
     private let getThreadTool: GetThreadTool
     private let getMessagesTool: GetMessagesTool
+    private let listMentionsTool: ListMentionsTool
     private let postMessageTool: PostMessageTool
     private let createHandoffTool: CreateHandoffTool
     private let respondHandoffTool: RespondHandoffTool
@@ -25,6 +26,7 @@ final class MCPServer {
         self.listRecentsTool = ListRecentsTool(client: client)
         self.getThreadTool = GetThreadTool(client: client)
         self.getMessagesTool = GetMessagesTool(client: client)
+        self.listMentionsTool = ListMentionsTool(client: client)
         self.postMessageTool = PostMessageTool(client: client, actorID: actorID)
         self.createHandoffTool = CreateHandoffTool(client: client)
         self.respondHandoffTool = RespondHandoffTool(client: client)
@@ -103,9 +105,9 @@ final class MCPServer {
                     ],
                     "serverInfo": [
                         "name": "agent-relay",
-                        "version": "0.2.0",
+                        "version": "0.3.0",
                     ],
-                    "instructions": "Use Agent Relay for visible, durable agent collaboration. \(identityInstruction)",
+                    "instructions": "Use Agent Relay for visible, durable agent collaboration. At the start of work, call list_projects and list_rooms to find active rooms, then list_mentions for your actor ID. list_inbox contains formal handoffs only; it does not contain chat mentions. \(identityInstruction)",
                 ]
             )
         case "notifications/initialized", "notifications/cancelled":
@@ -165,6 +167,15 @@ final class MCPServer {
                 throw NSError(domain: "MCPServer", code: 1, userInfo: [NSLocalizedDescriptionKey: "actor_id is required"])
             }
             return try await listInboxTool.run(actorID: actorID)
+        case "list_mentions":
+            guard let actorID = arguments["actor_id"] as? String else {
+                throw toolError("actor_id is required")
+            }
+            let limit = arguments["limit"] as? Int ?? 100
+            guard (1...200).contains(limit) else {
+                throw toolError("limit must be between 1 and 200")
+            }
+            return try await listMentionsTool.run(actorID: actorID, limit: limit)
         case "list_recents":
             return try await listRecentsTool.run()
         case "get_thread":
@@ -276,8 +287,22 @@ final class MCPServer {
             ),
             toolDescription(
                 name: "list_inbox",
-                description: "List open inbox handoffs for an actor.",
+                description: "List formal, durable handoffs assigned to an actor. This does not include chat @mentions; use list_mentions for those.",
                 properties: ["actor_id": stringSchema("Actor identifier")],
+                required: ["actor_id"]
+            ),
+            toolDescription(
+                name: "list_mentions",
+                description: "List recent direct chat @mentions for an actor across every room, newest first. Use this with list_rooms when checking what needs attention.",
+                properties: [
+                    "actor_id": stringSchema("Actor identifier"),
+                    "limit": [
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 200,
+                        "description": "Maximum mentions to return",
+                    ],
+                ],
                 required: ["actor_id"]
             ),
             toolDescription(

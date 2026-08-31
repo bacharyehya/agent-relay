@@ -17,6 +17,18 @@ struct GetMessagesTool {
     }
 }
 
+struct ListMentionsTool {
+    let client: any CoreAPIClientProtocol
+
+    func run(actorID: String, limit: Int = 100) async throws -> String {
+        let mentions = try await client.listMentions(actorID: actorID, limit: limit)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return String(decoding: try encoder.encode(mentions), as: UTF8.self)
+    }
+}
+
 private struct MessagePageOutput: Encodable {
     let messages: [Message]
     let nextCursor: MessageCursor?

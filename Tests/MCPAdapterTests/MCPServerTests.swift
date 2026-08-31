@@ -36,6 +36,7 @@ final class MCPServerTests: XCTestCase {
         XCTAssertTrue(tools.contains { $0["name"] as? String == "list_projects" })
         XCTAssertTrue(tools.contains { $0["name"] as? String == "list_rooms" })
         XCTAssertTrue(tools.contains { $0["name"] as? String == "list_actors" })
+        XCTAssertTrue(tools.contains { $0["name"] as? String == "list_mentions" })
         XCTAssertTrue(tools.allSatisfy { $0["inputSchema"] is [String: Any] })
     }
 

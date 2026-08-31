@@ -111,9 +111,14 @@ protocol AppAPIClientProtocol: Sendable {
     func fetchProjectThreads(projectID: String) async throws -> [AppCore.Thread]
     func fetchThreadContext(threadID: String, mode: String) async throws -> AppThreadContext
     func fetchThreadMessages(threadID: String, limit: Int, before: MessageCursor?) async throws -> [Message]
+    func fetchMentions(actorID: String, limit: Int) async throws -> [Message]
     func postMessage(threadID: String, request: AppPostMessageRequest) async throws -> Message
     func createHandoff(_ request: AppCreateHandoffRequest) async throws -> Handoff
     func updateHandoff(id: String, status: HandoffStatus, resolution: String?) async throws -> Handoff
+}
+
+extension AppAPIClientProtocol {
+    func fetchMentions(actorID: String, limit: Int) async throws -> [Message] { [] }
 }
 
 struct AppAPIClient: AppAPIClientProtocol {
@@ -203,6 +208,18 @@ struct AppAPIClient: AppAPIClientProtocol {
             queryItems.append(URLQueryItem(name: "before_message_id", value: before.messageID))
         }
         components?.queryItems = queryItems
+        guard let url = components?.url else {
+            throw AppAPIClientError.invalidResponse
+        }
+        return try await decode(url: url, method: "GET")
+    }
+
+    func fetchMentions(actorID: String, limit: Int = 100) async throws -> [Message] {
+        var components = URLComponents(
+            url: baseURL.appending(path: "mentions/\(actorID)"),
+            resolvingAgainstBaseURL: false
+        )
+        components?.queryItems = [URLQueryItem(name: "limit", value: String(limit))]
         guard let url = components?.url else {
             throw AppAPIClientError.invalidResponse
         }

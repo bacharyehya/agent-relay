@@ -140,4 +140,44 @@ final class MessageRepositoryTests: XCTestCase {
             XCTAssertEqual(error as? MessageRepositoryError, .replyMessageNotFound("missing"))
         }
     }
+
+    func test_list_mentions_is_exact_across_rooms_and_newest_first() throws {
+        let db = try TestDatabase.seeded()
+        let repository = MessageRepository(db)
+        try repository.create(
+            Message(
+                id: "mention-main",
+                threadID: "thread-search",
+                actorID: "bash",
+                body: "@codex-main review this",
+                mentionedActorIDs: ["codex-main"],
+                createdAt: Date(timeIntervalSince1970: 1_700_000_600)
+            )
+        )
+        try repository.create(
+            Message(
+                id: "mention-main-newer",
+                threadID: "thread-search",
+                actorID: "reviewer",
+                body: "@codex-main second",
+                mentionedActorIDs: ["codex-main"],
+                createdAt: Date(timeIntervalSince1970: 1_700_000_700)
+            )
+        )
+        try repository.create(
+            Message(
+                id: "mention-main-similar",
+                threadID: "thread-search",
+                actorID: "bash",
+                body: "@codex-main-2 only",
+                mentionedActorIDs: ["codex-main-2"],
+                createdAt: Date(timeIntervalSince1970: 1_700_000_800)
+            )
+        )
+
+        XCTAssertEqual(
+            try repository.listMentions(actorID: "codex-main").map(\.id),
+            ["mention-main-newer", "mention-main"]
+        )
+    }
 }

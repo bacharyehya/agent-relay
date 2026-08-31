@@ -50,6 +50,16 @@ public enum MessageRoutes {
             )
         }
 
+        router.get("mentions/:actorID") { request, context -> [Message] in
+            try environment.requireAuthorization(for: request)
+            let actorID = try context.parameters.require("actorID")
+            let limit = try parseLimit(request.uri.queryParameters["limit"].map(String.init))
+            return try environment.messageRepository.listMentions(
+                actorID: actorID,
+                limit: limit
+            )
+        }
+
         router.post("threads/:threadID/messages") { request, context -> Message in
             try environment.requireAuthorization(for: request)
             let actorID = try environment.requireActorIdentity(for: request)

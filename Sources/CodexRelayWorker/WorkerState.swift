@@ -1,3 +1,4 @@
+import AppCore
 import Darwin
 import Foundation
 
@@ -10,21 +11,25 @@ struct RelayWorkerState: Codable, Equatable, Sendable {
     var processedMessageIDs: Set<String> = []
     var codexThreadID: String?
     var pendingResponses: [String: PendingRelayResponse] = [:]
+    var promptVersion: Int = 0
 
     private enum CodingKeys: String, CodingKey {
         case processedMessageIDs
         case codexThreadID
         case pendingResponses
+        case promptVersion
     }
 
     init(
         processedMessageIDs: Set<String> = [],
         codexThreadID: String? = nil,
-        pendingResponses: [String: PendingRelayResponse] = [:]
+        pendingResponses: [String: PendingRelayResponse] = [:],
+        promptVersion: Int = 0
     ) {
         self.processedMessageIDs = processedMessageIDs
         self.codexThreadID = codexThreadID
         self.pendingResponses = pendingResponses
+        self.promptVersion = promptVersion
     }
 
     init(from decoder: any Decoder) throws {
@@ -38,6 +43,7 @@ struct RelayWorkerState: Codable, Equatable, Sendable {
             [String: PendingRelayResponse].self,
             forKey: .pendingResponses
         ) ?? [:]
+        promptVersion = try container.decodeIfPresent(Int.self, forKey: .promptVersion) ?? 0
     }
 }
 
@@ -86,6 +92,47 @@ struct WorkerStateStore: Sendable {
         }
         let result = scalars.joined()
         return result.isEmpty ? "actor" : result
+    }
+}
+
+struct WorkerRuntimeStatusStore: Sendable {
+    let statusURL: URL
+
+    init(supportDirectory: URL, actorID: String, threadID: String) throws {
+        let workerDirectory = supportDirectory.appendingPathComponent("workers", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: workerDirectory,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
+        statusURL = workerDirectory.appendingPathComponent(
+            AgentRuntimeStatus.fileName(actorID: actorID, threadID: threadID),
+            isDirectory: false
+        )
+    }
+
+    func save(
+        actorID: String,
+        threadID: String,
+        phase: AgentRuntimeStatus.Phase,
+        detail: String
+    ) throws {
+        let status = AgentRuntimeStatus(
+            actorID: actorID,
+            threadID: threadID,
+            phase: phase,
+            detail: detail
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        var data = try encoder.encode(status)
+        data.append(0x0A)
+        try data.write(to: statusURL, options: .atomic)
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o600],
+            ofItemAtPath: statusURL.path(percentEncoded: false)
+        )
     }
 }
 

@@ -190,6 +190,30 @@ public struct MessageRepository {
         }
     }
 
+    /// Returns the newest direct chat mentions for an actor across all rooms.
+    /// Formal handoffs intentionally remain a separate inbox concept.
+    public func listMentions(actorID: String, limit: Int = 100) throws -> [Message] {
+        let boundedLimit = min(max(limit, 1), 200)
+        return try dbQueue.read { db in
+            let rows = try Row.fetchAll(
+                db,
+                sql: """
+                SELECT messages.id, messages.thread_id, messages.actor_id,
+                       messages.body, messages.format,
+                       messages.reply_to_message_id,
+                       messages.mentioned_actor_ids,
+                       messages.created_at
+                FROM messages, json_each(messages.mentioned_actor_ids) AS mention
+                WHERE mention.value = ?
+                ORDER BY messages.created_at DESC, messages.id DESC
+                LIMIT ?
+                """,
+                arguments: [actorID, boundedLimit]
+            )
+            return try rows.map(Self.message(from:))
+        }
+    }
+
     static func message(from row: Row) throws -> Message {
         Message(
             id: row["id"],

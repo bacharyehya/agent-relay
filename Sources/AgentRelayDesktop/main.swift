@@ -1,7 +1,8 @@
 import AppKit
+import Darwin
 import Foundation
-import SwiftUI
 import MacAppSupport
+import SwiftUI
 
 @MainActor
 private final class AgentRelayAppDelegate: NSObject, NSApplicationDelegate {
@@ -18,26 +19,25 @@ private final class AgentRelayAppDelegate: NSObject, NSApplicationDelegate {
 
 @MainActor
 private final class LocalRuntime {
+    private struct HelperSpec {
+        let key: String
+        let executableName: String
+        let environment: [String: String]
+        let logName: String
+    }
+
     private struct Child {
         let process: Process
         let logHandle: FileHandle?
     }
 
-    private var children: [Child] = []
-    private var ownsCoreService = false
-
-    func start() {
-        if !coreIsHealthy() {
-            guard let core = startHelper(named: "CoreService", environment: [:]) else {
-                return
-            }
-            children.append(core)
-            ownsCoreService = true
-            guard waitForCore() else {
-                return
-            }
-        }
-
+    private let coreSpec = HelperSpec(
+        key: "core",
+        executableName: "CoreService",
+        environment: [:],
+        logName: "CoreService"
+    )
+    private lazy var workerSpecs: [HelperSpec] = {
         let supportDirectory = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/AgentRelay", isDirectory: true)
         let chatWorkspace = supportDirectory.appendingPathComponent("ChatWorkspace", isDirectory: true)
@@ -47,28 +47,67 @@ private final class LocalRuntime {
             attributes: [.posixPermissions: 0o700]
         )
 
-        for actorID in ["codex-main", "codex-research"] {
-            let workerEnvironment = [
-                "AGENT_RELAY_ACTOR_ID": actorID,
-                "AGENT_RELAY_THREAD_ID": "thread-general",
-                "AGENT_RELAY_POLL_INTERVAL_MS": "1500",
-                "AGENT_RELAY_CODEX_CWD": chatWorkspace.path(percentEncoded: false),
-            ]
-            if let worker = startHelper(
-                named: "CodexRelayWorker",
-                environment: workerEnvironment,
+        return ["codex-main", "codex-research"].map { actorID in
+            HelperSpec(
+                key: actorID,
+                executableName: "CodexRelayWorker",
+                environment: [
+                    "AGENT_RELAY_ACTOR_ID": actorID,
+                    "AGENT_RELAY_THREAD_ID": "thread-general",
+                    "AGENT_RELAY_POLL_INTERVAL_MS": "1000",
+                    "AGENT_RELAY_CODEX_CWD": chatWorkspace.path(percentEncoded: false),
+                ],
                 logName: actorID
-            ) {
-                children.append(worker)
+            )
+        }
+    }()
+
+    private var children: [String: Child] = [:]
+    private var ownsCoreService = false
+    private var isStopping = false
+    private var supervisionTask: Task<Void, Never>?
+
+    func start() {
+        guard supervisionTask == nil else { return }
+        isStopping = false
+        if ensureCoreIsRunning() {
+            ensureWorkersAreRunning()
+        }
+
+        supervisionTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                do {
+                    try await Task.sleep(for: .seconds(3))
+                } catch {
+                    break
+                }
+                self?.supervise()
             }
         }
     }
 
     func stop() {
-        for child in children.reversed() where child.process.isRunning {
-            child.process.terminate()
+        isStopping = true
+        supervisionTask?.cancel()
+        supervisionTask = nil
+
+        for (key, child) in children where key != coreSpec.key || ownsCoreService {
+            if child.process.isRunning {
+                child.process.terminate()
+            }
         }
-        for child in children.reversed() {
+
+        let deadline = Date().addingTimeInterval(2)
+        while Date() < deadline,
+              children.values.contains(where: { $0.process.isRunning })
+        {
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+
+        for (key, child) in children where key != coreSpec.key || ownsCoreService {
+            if child.process.isRunning {
+                Darwin.kill(child.process.processIdentifier, SIGKILL)
+            }
             child.process.waitUntilExit()
             try? child.logHandle?.close()
         }
@@ -76,13 +115,58 @@ private final class LocalRuntime {
         ownsCoreService = false
     }
 
-    private func startHelper(
-        named name: String,
-        environment additions: [String: String],
-        logName: String? = nil
-    ) -> Child? {
-        guard let executableURL = helperURL(named: name) else {
-            NSLog("Agent Relay could not find its %@ helper.", name)
+    private func supervise() {
+        guard !isStopping else { return }
+        reapExitedHelpers()
+        if ensureCoreIsRunning() {
+            ensureWorkersAreRunning()
+        }
+    }
+
+    private func reapExitedHelpers() {
+        let exitedKeys = children.compactMap { key, child in
+            child.process.isRunning ? nil : key
+        }
+        for key in exitedKeys {
+            guard let child = children.removeValue(forKey: key) else { continue }
+            child.process.waitUntilExit()
+            try? child.logHandle?.close()
+        }
+    }
+
+    @discardableResult
+    private func ensureCoreIsRunning() -> Bool {
+        if coreIsHealthy() {
+            return true
+        }
+
+        if let child = children[coreSpec.key], child.process.isRunning {
+            if waitForCore(attempts: 10) {
+                return true
+            }
+            child.process.terminate()
+            return false
+        }
+
+        guard let core = startHelper(coreSpec) else {
+            return false
+        }
+        children[coreSpec.key] = core
+        ownsCoreService = true
+        return waitForCore()
+    }
+
+    private func ensureWorkersAreRunning() {
+        for spec in workerSpecs where children[spec.key]?.process.isRunning != true {
+            if let worker = startHelper(spec) {
+                children[spec.key] = worker
+            }
+        }
+    }
+
+    private func startHelper(_ spec: HelperSpec) -> Child? {
+        guard let executableURL = helperURL(named: spec.executableName) else {
+            NSLog("Agent Relay could not find its %@ helper.", spec.executableName)
             return nil
         }
 
@@ -91,13 +175,13 @@ private final class LocalRuntime {
         var environment = ProcessInfo.processInfo.environment
         environment.removeValue(forKey: "OPENAI_API_KEY")
         environment.removeValue(forKey: "CODEX_API_KEY")
-        for (key, value) in additions {
+        for (key, value) in spec.environment {
             environment[key] = value
         }
         process.environment = environment
         process.standardInput = FileHandle.nullDevice
 
-        let logHandle = makeLogHandle(name: logName ?? name)
+        let logHandle = makeLogHandle(name: spec.logName)
         process.standardOutput = logHandle ?? FileHandle.nullDevice
         process.standardError = logHandle ?? FileHandle.nullDevice
 
@@ -105,7 +189,11 @@ private final class LocalRuntime {
             try process.run()
             return Child(process: process, logHandle: logHandle)
         } catch {
-            NSLog("Agent Relay could not start %@: %@", name, error.localizedDescription)
+            NSLog(
+                "Agent Relay could not start %@: %@",
+                spec.executableName,
+                error.localizedDescription
+            )
             try? logHandle?.close()
             return nil
         }
@@ -166,12 +254,17 @@ private final class LocalRuntime {
         guard let handle = try? FileHandle(forWritingTo: url) else {
             return nil
         }
-        _ = try? handle.seekToEnd()
+
+        let byteCount = (try? handle.seekToEnd()) ?? 0
+        if byteCount > 2_000_000 {
+            try? handle.truncate(atOffset: 0)
+            try? handle.seek(toOffset: 0)
+        }
         return handle
     }
 
-    private func waitForCore() -> Bool {
-        for _ in 0..<80 {
+    private func waitForCore(attempts: Int = 80) -> Bool {
+        for _ in 0..<attempts {
             if coreIsHealthy() {
                 return true
             }

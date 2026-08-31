@@ -14,33 +14,49 @@ public struct AgentRelayRootView: View {
         @Bindable var bindableModel = model
 
         NavigationSplitView {
-            SidebarView(selection: $bindableModel.selection)
+            SidebarView(
+                selection: $bindableModel.selection,
+                serviceState: model.serviceState,
+                mentionCount: model.mentions.count
+            )
+            .navigationSplitViewColumnWidth(min: 184, ideal: 210, max: 238)
         } detail: {
-            switch model.selection ?? .projects {
-            case .inbox:
-                InboxView(client: model.client)
+            switch model.selection ?? .room {
+            case .room:
+                ThreadDetailView(
+                    client: model.client,
+                    threadID: "thread-general",
+                    seedContext: nil,
+                    serviceState: model.serviceState,
+                    agentStatuses: model.agentStatuses
+                )
+            case .mentions:
+                MentionsView(messages: model.mentions) {
+                    model.selection = .room
+                }
             case .recents:
                 RecentsView(client: model.client)
             case .search:
                 SearchView(client: model.client)
-            case .projects:
-                ProjectsWorkspaceView(client: model.client)
             case .agents:
-                AgentListView()
+                AgentListView(statuses: model.agentStatuses)
             case .settings:
-                VStack(alignment: .leading, spacing: 16) {
-                    ServiceStatusView(state: model.serviceState)
-                    Text("Agent Relay keeps the board and its ChatGPT-backed agents on this Mac.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                }
-                .padding(24)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                RelaySettingsView(state: model.serviceState)
             }
         }
+        .navigationSplitViewStyle(.balanced)
+        .background(RelayPalette.canvas)
+        .preferredColorScheme(.dark)
+        .tint(RelayPalette.ink)
         .task {
-            await model.refresh()
+            while !Task.isCancelled {
+                await model.refresh()
+                do {
+                    try await Task.sleep(for: .seconds(2))
+                } catch {
+                    break
+                }
+            }
         }
     }
 }

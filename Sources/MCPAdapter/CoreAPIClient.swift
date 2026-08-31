@@ -92,9 +92,14 @@ protocol CoreAPIClientProtocol: Sendable {
     func listRecents() async throws -> [RecentItemPayload]
     func getThread(threadID: String, mode: String) async throws -> ThreadContextPayload
     func getMessages(threadID: String, limit: Int, before: MessageCursor?) async throws -> [Message]
+    func listMentions(actorID: String, limit: Int) async throws -> [Message]
     func postMessage(threadID: String, request: CreateMessagePayload) async throws -> Message
     func createHandoff(_ request: CreateHandoffPayload) async throws -> Handoff
     func updateHandoff(id: String, status: HandoffStatus, resolution: String?) async throws -> Handoff
+}
+
+extension CoreAPIClientProtocol {
+    func listMentions(actorID: String, limit: Int) async throws -> [Message] { [] }
 }
 
 struct CoreAPIClient: CoreAPIClientProtocol {
@@ -176,6 +181,18 @@ struct CoreAPIClient: CoreAPIClientProtocol {
             queryItems.append(URLQueryItem(name: "before_message_id", value: before.messageID))
         }
         components?.queryItems = queryItems
+        guard let url = components?.url else {
+            throw CoreAPIClientError.invalidResponse
+        }
+        return try await decode(url: url, method: "GET")
+    }
+
+    func listMentions(actorID: String, limit: Int) async throws -> [Message] {
+        var components = URLComponents(
+            url: baseURL.appending(path: "mentions/\(actorID)"),
+            resolvingAgainstBaseURL: false
+        )
+        components?.queryItems = [URLQueryItem(name: "limit", value: String(limit))]
         guard let url = components?.url else {
             throw CoreAPIClientError.invalidResponse
         }

@@ -45,14 +45,25 @@ final class AppModel {
     }
 
     let client: any AppAPIClientProtocol
+    private let runtimeStatusReader: AgentRuntimeStatusReader
     var serviceState: ServiceState = .checking
-    var selection: SidebarSelection? = .projects
+    var agentStatuses: [AgentRuntimeStatus] = []
+    var mentions: [Message] = []
+    var selection: SidebarSelection? = .room
 
-    init(client: any AppAPIClientProtocol) {
+    init(
+        client: any AppAPIClientProtocol,
+        runtimeStatusReader: AgentRuntimeStatusReader = AgentRuntimeStatusReader()
+    ) {
         self.client = client
+        self.runtimeStatusReader = runtimeStatusReader
     }
 
     func refresh() async {
+        agentStatuses = runtimeStatusReader.load()
+        if let refreshedMentions = try? await client.fetchMentions(actorID: "bash", limit: 100) {
+            mentions = refreshedMentions
+        }
         do {
             let health = try await client.fetchHealth()
             serviceState = health.status == "ok" ? .healthy : .degraded
@@ -63,10 +74,10 @@ final class AppModel {
 }
 
 enum SidebarSelection: String, CaseIterable, Identifiable {
-    case inbox
+    case room
+    case mentions
     case recents
     case search
-    case projects
     case agents
     case settings
 

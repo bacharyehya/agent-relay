@@ -12,6 +12,11 @@ struct CodexRelayWorkerMain {
                 actorID: configuration.actorID,
                 threadID: configuration.threadID
             )
+            let runtimeStatusStore = try WorkerRuntimeStatusStore(
+                supportDirectory: configuration.supportDirectory,
+                actorID: configuration.actorID,
+                threadID: configuration.threadID
+            )
             let instanceLock = try WorkerInstanceLock(
                 supportDirectory: configuration.supportDirectory,
                 actorID: configuration.actorID,
@@ -26,6 +31,7 @@ struct CodexRelayWorkerMain {
             try await Self.runWorkerSessions(
                 configuration: configuration,
                 stateStore: stateStore,
+                runtimeStatusStore: runtimeStatusStore,
                 instanceLock: instanceLock,
                 coreClient: coreClient
             )
@@ -38,9 +44,16 @@ struct CodexRelayWorkerMain {
     private static func runWorkerSessions(
         configuration: WorkerConfiguration,
         stateStore: WorkerStateStore,
+        runtimeStatusStore: WorkerRuntimeStatusStore,
         instanceLock: WorkerInstanceLock,
         coreClient: RelayCoreAPIClient
     ) async throws {
+        try? runtimeStatusStore.save(
+            actorID: configuration.actorID,
+            threadID: configuration.threadID,
+            phase: .starting,
+            detail: "Connecting to ChatGPT"
+        )
         while !Task.isCancelled {
             let codexClient = CodexAppServerClient()
             let worker = try CodexRelayWorker(
@@ -48,12 +61,19 @@ struct CodexRelayWorkerMain {
                 coreClient: coreClient,
                 codexClient: codexClient,
                 stateStore: stateStore,
+                runtimeStatusStore: runtimeStatusStore,
                 instanceLock: instanceLock
             )
             let account: AccountSummary
             do {
                 account = try await worker.verifyChatGPTManagedAccount()
             } catch {
+                try? runtimeStatusStore.save(
+                    actorID: configuration.actorID,
+                    threadID: configuration.threadID,
+                    phase: .unavailable,
+                    detail: "ChatGPT sign-in is unavailable"
+                )
                 try? await Self.postReadinessFailure(
                     configuration: configuration,
                     coreClient: coreClient
@@ -64,21 +84,45 @@ struct CodexRelayWorkerMain {
             Self.writeStatus(
                 "CodexRelayWorker ready as @\(configuration.actorID) in \(configuration.threadID) using ChatGPT-managed Codex (plan: \(String(describing: account.planType)))."
             )
+            try? runtimeStatusStore.save(
+                actorID: configuration.actorID,
+                threadID: configuration.threadID,
+                phase: .ready,
+                detail: "Watching for @mentions"
+            )
 
             var restartCodexSession = false
             while !Task.isCancelled {
                 var delayMilliseconds = configuration.pollIntervalMilliseconds
                 do {
                     _ = try await worker.pollOnce()
+                    try? runtimeStatusStore.save(
+                        actorID: configuration.actorID,
+                        threadID: configuration.threadID,
+                        phase: .ready,
+                        detail: "Watching for @mentions"
+                    )
                 } catch let error as RelayWorkerRecoveryError {
                     Self.writeError(
                         "CodexRelayWorker is restarting its bounded local Codex session: \(error.localizedDescription)"
+                    )
+                    try? runtimeStatusStore.save(
+                        actorID: configuration.actorID,
+                        threadID: configuration.threadID,
+                        phase: .retrying,
+                        detail: "Restarting the ChatGPT session"
                     )
                     restartCodexSession = true
                     break
                 } catch {
                     Self.writeError(
                         "CodexRelayWorker poll failed and will retry safely: \(error.localizedDescription)"
+                    )
+                    try? runtimeStatusStore.save(
+                        actorID: configuration.actorID,
+                        threadID: configuration.threadID,
+                        phase: .retrying,
+                        detail: "Retrying after a safe failure"
                     )
                     delayMilliseconds = max(delayMilliseconds, 5_000)
                 }
