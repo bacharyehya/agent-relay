@@ -23,7 +23,7 @@ final class InboxRouteTests: XCTestCase {
         }
     }
 
-    func test_thread_context_route_returns_bounded_messages_and_handoffs() async throws {
+    func test_thread_context_route_returns_current_messages_and_handoffs() async throws {
         let app = try TestApp.make()
 
         try await app.test(.router) { client in
@@ -35,7 +35,7 @@ final class InboxRouteTests: XCTestCase {
                 let context = try Self.decode(ThreadContext.self, from: response.body)
                 XCTAssertEqual(response.status, .ok)
                 XCTAssertEqual(context.thread.id, "thread-api")
-                XCTAssertEqual(context.messages.count, 2)
+                XCTAssertEqual(context.messages.count, 5)
                 XCTAssertEqual(context.handoffs.count, 2)
             }
         }

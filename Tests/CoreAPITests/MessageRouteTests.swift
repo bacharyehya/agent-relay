@@ -39,7 +39,8 @@ final class MessageRouteTests: XCTestCase {
                 await created.set(try Self.decode(Message.self, from: response.body))
             }
 
-            let message = try XCTUnwrap(await created.get())
+            let createdMessage = await created.get()
+            let message = try XCTUnwrap(createdMessage)
             XCTAssertEqual(message.actorID, "bash")
             XCTAssertEqual(message.replyToMessageID, "message-api-1")
             XCTAssertEqual(message.mentionedActorIDs, ["codex-main", "reviewer"])
@@ -200,7 +201,8 @@ final class MessageRouteTests: XCTestCase {
                 await firstPage.set(try Self.decode([Message].self, from: response.body))
             }
 
-            let page = try XCTUnwrap(await firstPage.get())
+            let firstPageValue = await firstPage.get()
+            let page = try XCTUnwrap(firstPageValue)
             XCTAssertEqual(page.map(\.id), ["message-api-same-b", "message-api-same-c"])
             let cursorMessage = try XCTUnwrap(page.first)
             let encodedDate = PreciseDateCodec.string(from: cursorMessage.createdAt)

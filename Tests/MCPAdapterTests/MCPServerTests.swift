@@ -6,11 +6,10 @@ import XCTest
 final class MCPServerTests: XCTestCase {
     func test_initialize_ping_and_tool_descriptors_follow_mcp_handshake() async throws {
         let server = MCPServer(client: MCPStubClient(), actorID: "codex-main")
-        let initialize = try XCTUnwrap(
-            try await server.handle(
-                line: #"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}"#
-            )
+        let initializeResult = try await server.handle(
+            line: #"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}"#
         )
+        let initialize = try XCTUnwrap(initializeResult)
         let initializeJSON = try Self.json(initialize)
         let result = try XCTUnwrap(initializeJSON["result"] as? [String: Any])
         XCTAssertEqual(result["protocolVersion"] as? String, "2025-06-18")
@@ -21,14 +20,12 @@ final class MCPServerTests: XCTestCase {
         )
         XCTAssertNil(initialized)
 
-        let ping = try XCTUnwrap(
-            try await server.handle(line: #"{"jsonrpc":"2.0","id":2,"method":"ping"}"#)
-        )
+        let pingResult = try await server.handle(line: #"{"jsonrpc":"2.0","id":2,"method":"ping"}"#)
+        let ping = try XCTUnwrap(pingResult)
         XCTAssertNotNil(try Self.json(ping)["result"] as? [String: Any])
 
-        let list = try XCTUnwrap(
-            try await server.handle(line: #"{"jsonrpc":"2.0","id":3,"method":"tools/list"}"#)
-        )
+        let listResultValue = try await server.handle(line: #"{"jsonrpc":"2.0","id":3,"method":"tools/list"}"#)
+        let list = try XCTUnwrap(listResultValue)
         let listResult = try XCTUnwrap(try Self.json(list)["result"] as? [String: Any])
         let tools = try XCTUnwrap(listResult["tools"] as? [[String: Any]])
         XCTAssertTrue(tools.contains { $0["name"] as? String == "get_messages" })
@@ -42,11 +39,10 @@ final class MCPServerTests: XCTestCase {
 
     func test_post_message_rejects_actor_spoofing() async throws {
         let server = MCPServer(client: MCPStubClient(), actorID: "codex-main")
-        let response = try XCTUnwrap(
-            try await server.handle(
-                line: #"{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"post_message","arguments":{"thread_id":"thread-1","body":"hello","idempotency_key":"spoof-test","actor_id":"someone-else"}}}"#
-            )
+        let responseValue = try await server.handle(
+            line: #"{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"post_message","arguments":{"thread_id":"thread-1","body":"hello","idempotency_key":"spoof-test","actor_id":"someone-else"}}}"#
         )
+        let response = try XCTUnwrap(responseValue)
         let result = try XCTUnwrap(try Self.json(response)["result"] as? [String: Any])
 
         XCTAssertEqual(result["isError"] as? Bool, true)
@@ -56,11 +52,10 @@ final class MCPServerTests: XCTestCase {
 
     func test_post_message_uses_bound_actor_identity() async throws {
         let server = MCPServer(client: MCPStubClient(), actorID: "codex-main")
-        let response = try XCTUnwrap(
-            try await server.handle(
-                line: #"{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"post_message","arguments":{"thread_id":"thread-1","body":"hello","idempotency_key":"bound-test","mentioned_actor_ids":["bash"]}}}"#
-            )
+        let responseValue = try await server.handle(
+            line: #"{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"post_message","arguments":{"thread_id":"thread-1","body":"hello","idempotency_key":"bound-test","mentioned_actor_ids":["bash"]}}}"#
         )
+        let response = try XCTUnwrap(responseValue)
         let result = try XCTUnwrap(try Self.json(response)["result"] as? [String: Any])
         XCTAssertEqual(result["isError"] as? Bool, false)
         let content = try XCTUnwrap(result["content"] as? [[String: Any]])
@@ -69,19 +64,17 @@ final class MCPServerTests: XCTestCase {
 
     func test_discovery_and_message_cursor_are_directly_reusable() async throws {
         let server = MCPServer(client: MCPStubClient(), actorID: "codex-main")
-        let actorsResponse = try XCTUnwrap(
-            try await server.handle(
-                line: #"{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"list_actors","arguments":{}}}"#
-            )
+        let actorsResponseValue = try await server.handle(
+            line: #"{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"list_actors","arguments":{}}}"#
         )
+        let actorsResponse = try XCTUnwrap(actorsResponseValue)
         XCTAssertTrue(actorsResponse.contains("bash"))
         XCTAssertTrue(actorsResponse.contains("codex-main"))
 
-        let messagesResponse = try XCTUnwrap(
-            try await server.handle(
-                line: #"{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"get_messages","arguments":{"thread_id":"thread-1","limit":1}}}"#
-            )
+        let messagesResponseValue = try await server.handle(
+            line: #"{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"get_messages","arguments":{"thread_id":"thread-1","limit":1}}}"#
         )
+        let messagesResponse = try XCTUnwrap(messagesResponseValue)
         let result = try XCTUnwrap(try Self.json(messagesResponse)["result"] as? [String: Any])
         let content = try XCTUnwrap(result["content"] as? [[String: Any]])
         let text = try XCTUnwrap(content.first?["text"] as? String)
@@ -97,14 +90,14 @@ final class MCPServerTests: XCTestCase {
 
     func test_unbound_server_does_not_advertise_post_message_and_invalid_json_is_parse_error() async throws {
         let server = MCPServer(client: MCPStubClient())
-        let list = try XCTUnwrap(
-            try await server.handle(line: #"{"jsonrpc":"2.0","id":8,"method":"tools/list"}"#)
-        )
+        let listValue = try await server.handle(line: #"{"jsonrpc":"2.0","id":8,"method":"tools/list"}"#)
+        let list = try XCTUnwrap(listValue)
         let listResult = try XCTUnwrap(try Self.json(list)["result"] as? [String: Any])
         let tools = try XCTUnwrap(listResult["tools"] as? [[String: Any]])
         XCTAssertFalse(tools.contains { $0["name"] as? String == "post_message" })
 
-        let invalid = try XCTUnwrap(try await server.handle(line: "{"))
+        let invalidValue = try await server.handle(line: "{")
+        let invalid = try XCTUnwrap(invalidValue)
         let error = try XCTUnwrap(try Self.json(invalid)["error"] as? [String: Any])
         XCTAssertEqual(error["code"] as? Int, -32700)
     }
