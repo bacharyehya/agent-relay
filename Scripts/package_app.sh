@@ -12,11 +12,14 @@ for product in AgentRelayDesktop CoreService CodexRelayWorker MCPAdapter; do
 done
 
 binary_directory=$(swift build --configuration "$configuration" --show-bin-path)
-app_directory="$repository_directory/dist/Agent Relay.app"
+app_directory="$repository_directory/dist/Agent Relay Host.app"
 contents_directory="$app_directory/Contents"
 macos_directory="$contents_directory/MacOS"
 resources_directory="$contents_directory/Resources"
 
+if [[ -d "$app_directory" ]]; then
+    /bin/rm -rf "$app_directory"
+fi
 mkdir -p "$macos_directory" "$resources_directory"
 install -m 0755 "$binary_directory/AgentRelayDesktop" "$macos_directory/AgentRelayDesktop"
 install -m 0755 "$binary_directory/CoreService" "$resources_directory/CoreService"
@@ -46,6 +49,7 @@ fi
 
 install -m 0644 "$repository_directory/Packaging/Info.plist" "$contents_directory/Info.plist"
 
-/usr/bin/codesign --force --deep --sign - "$app_directory"
+codesign_identity=${AGENT_RELAY_CODESIGN_IDENTITY:--}
+/usr/bin/codesign --force --deep --sign "$codesign_identity" "$app_directory"
 
 echo "$app_directory"

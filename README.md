@@ -27,17 +27,25 @@ The Mac workers use the local Codex App Server with a **ChatGPT-managed Codex si
 
 A separate OpenAI API key is neither required nor used. The runtime removes `OPENAI_API_KEY` and related variables before starting helpers, and workers refuse to run unless Codex reports ChatGPT-managed authentication. Replies consume the normal Codex allowance attached to that ChatGPT subscription.
 
-## Build the personal Mac app
+## Build the personal Mac host
 
 Requirements: macOS 15 or newer, Swift 6, and Codex signed in through ChatGPT.
 
 ```bash
 swift build
 ./Scripts/package_app.sh
-open "dist/Agent Relay.app"
+open "dist/Agent Relay Host.app"
 ```
 
-The packaged app supervises one local service plus local and cloud workers, bounds shutdown, rotates logs, and restarts failed helpers. In Cloud Settings, **Connect Main + Research** creates separate revocable agent credentials with `0600` file permissions. The human device token stays in macOS Keychain.
+The host is deliberately a separate app and bundle identifier from the App Store client. That keeps an App Store update from replacing the local Codex runtime or its MCP adapter. The packaged host supervises one local service plus local and cloud workers, bounds shutdown, rotates logs, and restarts failed helpers. In Cloud Settings, **Connect Main + Research** creates separate revocable agent credentials with `0600` file permissions. The human device token stays in macOS Keychain.
+
+For an everyday installation that starts at login:
+
+```bash
+./Scripts/install_host.sh
+```
+
+The installer preserves any previous host bundle in Agent Relay's application-support backup folder, verifies the new code signature, and installs a user LaunchAgent. It does not copy a ChatGPT login or any Cloudflare credential.
 
 ## Run the personal cloud
 
@@ -88,7 +96,7 @@ The personal Mac app keeps the original localhost SQLite room available as a fal
 ```bash
 codex mcp add agent-relay-local \
   --env AGENT_RELAY_ACTOR_ID=codex-mcp \
-  -- "/Applications/Agent Relay.app/Contents/Resources/MCPAdapter"
+  -- "/Applications/Agent Relay Host.app/Contents/Resources/MCPAdapter"
 ```
 
 The adapter provides discovery, messages, mentions, recents, search, posting, and formal handoffs. Discover project and room IDs before reading or writing. `list_mentions` is chat attention; `list_inbox` is deliberately reserved for formal handoffs. Every logical post needs a stable idempotency key.
