@@ -169,6 +169,14 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					5C1126C364C152F2905EA5E7 = {
+						DevelopmentTeam = W6C62KF3PU;
+						ProvisioningStyle = Automatic;
+					};
+					5F9DD13666ECE878C6F7CBFF = {
+						DevelopmentTeam = W6C62KF3PU;
+						ProvisioningStyle = Automatic;
+					};
 				};
 			};
 			buildConfigurationList = 9FDA22DEAC14A617B3DE75F2 /* Build configuration list for PBXProject "AgentRelay" */;
@@ -240,7 +248,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = W6C62KF3PU;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Agent Relay";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
@@ -263,8 +273,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/MacApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = W6C62KF3PU;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Agent Relay";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
@@ -285,8 +297,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/MacApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = W6C62KF3PU;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Agent Relay";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
@@ -307,7 +321,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = W6C62KF3PU;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Agent Relay";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
