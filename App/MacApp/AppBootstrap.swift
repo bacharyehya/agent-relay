@@ -1,9 +1,11 @@
 import AppCore
 import Foundation
+import RelayCloudUI
 import SwiftUI
 
 public struct AgentRelayRootView: View {
     @State private var model: AppModel
+    @AppStorage("AgentRelay.AppMode") private var appMode = "cloud"
 
     @MainActor
     public init() {
@@ -11,9 +13,30 @@ public struct AgentRelayRootView: View {
     }
 
     public var body: some View {
+        Group {
+            if appMode == "cloud" {
+                RelayCloudRootView()
+            } else {
+                localWorkspace
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                Picker("Relay mode", selection: $appMode) {
+                    Text("Cloud").tag("cloud")
+                    Text("This Mac").tag("local")
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 170)
+                .help("Cloud syncs every enrolled device. This Mac keeps the original local board available as a fallback.")
+            }
+        }
+    }
+
+    private var localWorkspace: some View {
         @Bindable var bindableModel = model
 
-        NavigationSplitView {
+        return NavigationSplitView {
             SidebarView(
                 selection: $bindableModel.selection,
                 serviceState: model.serviceState,

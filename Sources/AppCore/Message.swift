@@ -2,6 +2,7 @@ import Foundation
 
 public struct Message: Codable, Equatable, Identifiable, Sendable {
     public var id: String
+    public var sequence: Int?
     public var threadID: String
     public var actorID: String
     public var body: String
@@ -12,6 +13,7 @@ public struct Message: Codable, Equatable, Identifiable, Sendable {
 
     public init(
         id: String,
+        sequence: Int? = nil,
         threadID: String,
         actorID: String,
         body: String,
@@ -21,6 +23,7 @@ public struct Message: Codable, Equatable, Identifiable, Sendable {
         createdAt: Date = .now
     ) {
         self.id = id
+        self.sequence = sequence
         self.threadID = threadID
         self.actorID = actorID
         self.body = body
@@ -32,6 +35,7 @@ public struct Message: Codable, Equatable, Identifiable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case id
+        case sequence
         case threadID
         case actorID
         case body
@@ -44,6 +48,7 @@ public struct Message: Codable, Equatable, Identifiable, Sendable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
+        sequence = try container.decodeIfPresent(Int.self, forKey: .sequence)
         threadID = try container.decode(String.self, forKey: .threadID)
         actorID = try container.decode(String.self, forKey: .actorID)
         body = try container.decode(String.self, forKey: .body)
@@ -67,6 +72,7 @@ public struct Message: Codable, Equatable, Identifiable, Sendable {
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(sequence, forKey: .sequence)
         try container.encode(threadID, forKey: .threadID)
         try container.encode(actorID, forKey: .actorID)
         try container.encode(body, forKey: .body)

@@ -22,12 +22,28 @@ struct CodexRelayWorkerMain {
                 actorID: configuration.actorID,
                 threadID: configuration.threadID
             )
-            let coreClient = RelayCoreAPIClient(
-                baseURL: configuration.coreServiceURL,
-                authToken: configuration.coreAuthToken,
-                actorID: configuration.actorID,
-                actorCredential: configuration.actorCredential
-            )
+            let coreClient: any RelayCoreAPIClientProtocol
+            switch configuration.transport {
+            case .local:
+                coreClient = RelayCoreAPIClient(
+                    baseURL: configuration.coreServiceURL,
+                    authToken: configuration.coreAuthToken,
+                    actorID: configuration.actorID,
+                    actorCredential: configuration.actorCredential
+                )
+            case .cloud:
+                guard let cloudServiceURL = configuration.cloudServiceURL,
+                      let cloudToken = configuration.cloudToken
+                else {
+                    throw WorkerConfigurationError.missingCloudTokenFile
+                }
+                coreClient = try RelayCloudWorkerAPIClient(
+                    baseURL: cloudServiceURL,
+                    token: cloudToken,
+                    actorID: configuration.actorID,
+                    deviceName: configuration.cloudDeviceName
+                )
+            }
             try await Self.runWorkerSessions(
                 configuration: configuration,
                 stateStore: stateStore,
@@ -46,7 +62,7 @@ struct CodexRelayWorkerMain {
         stateStore: WorkerStateStore,
         runtimeStatusStore: WorkerRuntimeStatusStore,
         instanceLock: WorkerInstanceLock,
-        coreClient: RelayCoreAPIClient
+        coreClient: any RelayCoreAPIClientProtocol
     ) async throws {
         try? runtimeStatusStore.save(
             actorID: configuration.actorID,
@@ -82,7 +98,7 @@ struct CodexRelayWorkerMain {
                 throw error
             }
             Self.writeStatus(
-                "CodexRelayWorker ready as @\(configuration.actorID) in \(configuration.threadID) using ChatGPT-managed Codex (plan: \(String(describing: account.planType)))."
+                "CodexRelayWorker ready as @\(configuration.actorID) in \(configuration.threadID) over \(configuration.transport.rawValue) using ChatGPT-managed Codex (plan: \(String(describing: account.planType)))."
             )
             try? runtimeStatusStore.save(
                 actorID: configuration.actorID,
@@ -141,7 +157,7 @@ struct CodexRelayWorkerMain {
 
     private static func postReadinessFailure(
         configuration: WorkerConfiguration,
-        coreClient: RelayCoreAPIClient
+        coreClient: any RelayCoreAPIClientProtocol
     ) async throws {
         _ = try await coreClient.postMessage(
             threadID: configuration.threadID,

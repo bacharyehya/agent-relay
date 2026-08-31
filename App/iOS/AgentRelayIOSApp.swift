@@ -2,7 +2,7 @@ import RelayCloudUI
 import SwiftUI
 
 @main
-struct AgentRelayMacApp: App {
+struct AgentRelayIOSApp: App {
     var body: some Scene {
         WindowGroup {
             RelayCloudRootView()

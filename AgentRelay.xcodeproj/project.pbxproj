@@ -7,231 +7,89 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1C7E8AC39206517F0CB31F1C /* MessageRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F42482B3B96A2D8406B178A /* MessageRowView.swift */; };
-		2633E4E572406DD8E19E70EE /* ServiceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6C493F1AE711D423A7349BA /* ServiceController.swift */; };
+		1EA30CCE73D9AE979828FF58 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BF93776B581D9508394799D7 /* PrivacyInfo.xcprivacy */; };
+		203A9823B2732429B1D9495D /* AgentRelayIOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 552102B1529CAA9A1AC5FAD7 /* AgentRelayIOSApp.swift */; };
 		28BEEB1C289085224D04E317 /* AppCore in Frameworks */ = {isa = PBXBuildFile; productRef = 94C94C890571A31792889087 /* AppCore */; };
 		2F362716F617DEBDC2F97C9E /* AgentRelayMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A881D4F6A1BCE835EF717A42 /* AgentRelayMacApp.swift */; };
-		30C26E326593A323A4DD6D68 /* HandoffCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1F7DB0B3BB1B21EE55589A /* HandoffCardView.swift */; };
-		32A8BDFCA79C1B6F821669DA /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B747CF69BE31285160DE79DB /* AppModel.swift */; };
-		47BC81860DB23F92041AC8C3 /* AgentListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03476B55CF72EB62F8DCBD13 /* AgentListView.swift */; };
-		4817112EF8061BCDF2777885 /* ThreadListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D77A6E1A0AE962A1DF6F75B3 /* ThreadListView.swift */; };
-		4DC364AAE63B940196453135 /* LaunchSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 066DB2B6DC7A1B397FD67A4B /* LaunchSettingsView.swift */; };
-		6DC8798C66A049C26D0862D3 /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D2AFEAAFC967E087CD59788 /* ProjectDetailView.swift */; };
-		76236B9A259F062E0F66CE70 /* NotificationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AADB89CA52E7B0DBB6F70D1A /* NotificationCoordinator.swift */; };
-		77BC23528DF1C731D35DF014 /* PauseAgentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5D2740D9C29B185812D52A4 /* PauseAgentsView.swift */; };
-		91CAB4885E67A554028CA912 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9C5D88B20A5CA696AA6C2F /* SidebarView.swift */; };
-		977263F5356C806D79E48714 /* ProjectsWorkspaceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90FE827B9F721C3EE6D57D02 /* ProjectsWorkspaceViewModel.swift */; };
-		9DC7053FBF59291E7EC2BC59 /* ThreadDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3DE9CC742225720E435EFA /* ThreadDetailViewModel.swift */; };
-		9FFFA47E3F2D62C8793A13BC /* ThreadDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C317BDAD215B6B2B2D675448 /* ThreadDetailView.swift */; };
-		A99C19ADAD31B8C8A6D36643 /* ProjectListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F67A4B75FB04594B5BE565B /* ProjectListView.swift */; };
-		AD47D3AF426AD5E8C90E38E1 /* HandoffComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5F981D5DAC98743FAA0430F /* HandoffComposerView.swift */; };
-		AE582A5EBECD1D0C0621913B /* ProjectsWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A79032894011759239021F /* ProjectsWorkspaceView.swift */; };
-		B2E2DB7618718D07D9E046FF /* AppBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5123055AD72237409B91D611 /* AppBootstrap.swift */; };
-		B79798263E0633ECDDDE412D /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60F0C54955642E974653BA09 /* SearchView.swift */; };
-		C1AA061F1844E0A077C4653F /* ServiceStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D70FADDC2163DFE1AAF25A1 /* ServiceStatusView.swift */; };
-		CB5F9D8361A35C8FC46C130F /* RecentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAF53DF3D4D72EFF36320F3 /* RecentsView.swift */; };
-		D23BE3F0958D43F7FD356B66 /* PreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EEE994B91CF64DC6A31E728 /* PreviewData.swift */; };
-		E21137A6210C3188016D30D5 /* EventStreamClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1451F1AFACD890A04E900004 /* EventStreamClient.swift */; };
-		E659BED1CF38CA8EBA94533A /* InboxViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687F51605D1E1F799B9D73E6 /* InboxViewModel.swift */; };
-		F9813CFE6D1831AAAD26C911 /* ProjectDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E9895FD9672C6DF0BB3329 /* ProjectDetailViewModel.swift */; };
-		FA82A7DE151FC1B9827CDA53 /* InboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F232CE9CB8B1684193C8B5E4 /* InboxView.swift */; };
-		FB992B9BDF5F68DE71395FB6 /* AppAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA8022A0F5FB1AEFAA742D47 /* AppAPIClient.swift */; };
+		4992C0A87F09A78D13513EDD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97957C38A20E75B69C7E0195 /* Assets.xcassets */; };
+		6191AB7F10D48B12AC422115 /* RelayCloudUI in Frameworks */ = {isa = PBXBuildFile; productRef = 769D295DAB55980C411C60D6 /* RelayCloudUI */; };
+		759E254AEECAAE9BCF6A21D0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97957C38A20E75B69C7E0195 /* Assets.xcassets */; };
+		8E13E14F966FEA26BE239008 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BF93776B581D9508394799D7 /* PrivacyInfo.xcprivacy */; };
+		91DF0ADBA680FCB2146B6E03 /* RelayCloudClient in Frameworks */ = {isa = PBXBuildFile; productRef = 43891F51B718131B6AACC58D /* RelayCloudClient */; };
+		C478F83AAA2AC0B5CBBEFE1C /* RelayCloudUI in Frameworks */ = {isa = PBXBuildFile; productRef = 09FB9500CA50580106BD499E /* RelayCloudUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		03476B55CF72EB62F8DCBD13 /* AgentListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentListView.swift; sourceTree = "<group>"; };
-		066DB2B6DC7A1B397FD67A4B /* LaunchSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchSettingsView.swift; sourceTree = "<group>"; };
-		0F9C5D88B20A5CA696AA6C2F /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
-		1451F1AFACD890A04E900004 /* EventStreamClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventStreamClient.swift; sourceTree = "<group>"; };
-		2F67A4B75FB04594B5BE565B /* ProjectListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListView.swift; sourceTree = "<group>"; };
+		0580EF05175D43177968F398 /* AgentRelayiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = AgentRelayiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A03EFC8E7FE0FD61CECD6B1 /* AgentRelayMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AgentRelayMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		4D2AFEAAFC967E087CD59788 /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailView.swift; sourceTree = "<group>"; };
-		5123055AD72237409B91D611 /* AppBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBootstrap.swift; sourceTree = "<group>"; };
-		5A3DE9CC742225720E435EFA /* ThreadDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadDetailViewModel.swift; sourceTree = "<group>"; };
-		60F0C54955642E974653BA09 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
-		687F51605D1E1F799B9D73E6 /* InboxViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxViewModel.swift; sourceTree = "<group>"; };
+		552102B1529CAA9A1AC5FAD7 /* AgentRelayIOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRelayIOSApp.swift; sourceTree = "<group>"; };
 		715A81B5177B191D79B24AC8 /* agent-relay */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "agent-relay"; path = .; sourceTree = SOURCE_ROOT; };
-		7D70FADDC2163DFE1AAF25A1 /* ServiceStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceStatusView.swift; sourceTree = "<group>"; };
-		80E9895FD9672C6DF0BB3329 /* ProjectDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailViewModel.swift; sourceTree = "<group>"; };
-		8EEE994B91CF64DC6A31E728 /* PreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewData.swift; sourceTree = "<group>"; };
-		90FE827B9F721C3EE6D57D02 /* ProjectsWorkspaceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsWorkspaceViewModel.swift; sourceTree = "<group>"; };
-		9F42482B3B96A2D8406B178A /* MessageRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRowView.swift; sourceTree = "<group>"; };
-		A0A79032894011759239021F /* ProjectsWorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsWorkspaceView.swift; sourceTree = "<group>"; };
+		97957C38A20E75B69C7E0195 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A881D4F6A1BCE835EF717A42 /* AgentRelayMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRelayMacApp.swift; sourceTree = "<group>"; };
-		AADB89CA52E7B0DBB6F70D1A /* NotificationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCoordinator.swift; sourceTree = "<group>"; };
-		B747CF69BE31285160DE79DB /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
-		BA1F7DB0B3BB1B21EE55589A /* HandoffCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandoffCardView.swift; sourceTree = "<group>"; };
-		BA8022A0F5FB1AEFAA742D47 /* AppAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAPIClient.swift; sourceTree = "<group>"; };
-		C317BDAD215B6B2B2D675448 /* ThreadDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadDetailView.swift; sourceTree = "<group>"; };
-		C6C493F1AE711D423A7349BA /* ServiceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceController.swift; sourceTree = "<group>"; };
-		CCAF53DF3D4D72EFF36320F3 /* RecentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentsView.swift; sourceTree = "<group>"; };
-		D5F981D5DAC98743FAA0430F /* HandoffComposerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandoffComposerView.swift; sourceTree = "<group>"; };
-		D77A6E1A0AE962A1DF6F75B3 /* ThreadListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadListView.swift; sourceTree = "<group>"; };
-		F232CE9CB8B1684193C8B5E4 /* InboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxView.swift; sourceTree = "<group>"; };
-		F5D2740D9C29B185812D52A4 /* PauseAgentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PauseAgentsView.swift; sourceTree = "<group>"; };
+		BF93776B581D9508394799D7 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		48BDEDA988C6A488CB04390B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6191AB7F10D48B12AC422115 /* RelayCloudUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5CE3A58B7C734EBD5E6BBD0C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				28BEEB1C289085224D04E317 /* AppCore in Frameworks */,
+				91DF0ADBA680FCB2146B6E03 /* RelayCloudClient in Frameworks */,
+				C478F83AAA2AC0B5CBBEFE1C /* RelayCloudUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		047BF4B5912F3C7DB369EA2A /* Search */ = {
+		237513810EC275AD76B18460 /* iOS */ = {
 			isa = PBXGroup;
 			children = (
-				60F0C54955642E974653BA09 /* SearchView.swift */,
+				552102B1529CAA9A1AC5FAD7 /* AgentRelayIOSApp.swift */,
 			);
-			path = Search;
+			name = iOS;
+			path = App/iOS;
 			sourceTree = "<group>";
 		};
-		1D0E1E5469D088B1DC3958C8 /* Projects */ = {
+		3787279CD3B682A601E3C090 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				4D2AFEAAFC967E087CD59788 /* ProjectDetailView.swift */,
-				2F67A4B75FB04594B5BE565B /* ProjectListView.swift */,
-				A0A79032894011759239021F /* ProjectsWorkspaceView.swift */,
+				97957C38A20E75B69C7E0195 /* Assets.xcassets */,
 			);
-			path = Projects;
-			sourceTree = "<group>";
-		};
-		1E06AB2F63E9BA2F5889B7ED /* Status */ = {
-			isa = PBXGroup;
-			children = (
-				7D70FADDC2163DFE1AAF25A1 /* ServiceStatusView.swift */,
-			);
-			path = Status;
-			sourceTree = "<group>";
-		};
-		23B8214508F5A6424F170452 /* Inbox */ = {
-			isa = PBXGroup;
-			children = (
-				F232CE9CB8B1684193C8B5E4 /* InboxView.swift */,
-			);
-			path = Inbox;
-			sourceTree = "<group>";
-		};
-		24B5995CAEC29FFA9A153662 /* Recents */ = {
-			isa = PBXGroup;
-			children = (
-				CCAF53DF3D4D72EFF36320F3 /* RecentsView.swift */,
-			);
-			path = Recents;
-			sourceTree = "<group>";
-		};
-		24F547517C0A78AA440AC51A /* ViewModels */ = {
-			isa = PBXGroup;
-			children = (
-				687F51605D1E1F799B9D73E6 /* InboxViewModel.swift */,
-				80E9895FD9672C6DF0BB3329 /* ProjectDetailViewModel.swift */,
-				90FE827B9F721C3EE6D57D02 /* ProjectsWorkspaceViewModel.swift */,
-				5A3DE9CC742225720E435EFA /* ThreadDetailViewModel.swift */,
-			);
-			path = ViewModels;
-			sourceTree = "<group>";
-		};
-		344BD28D5B89FBD9A11D7795 /* Preview */ = {
-			isa = PBXGroup;
-			children = (
-				8EEE994B91CF64DC6A31E728 /* PreviewData.swift */,
-			);
-			path = Preview;
-			sourceTree = "<group>";
-		};
-		50C6E7F80BD0D2BAF91B8443 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				C6C493F1AE711D423A7349BA /* ServiceController.swift */,
-			);
-			path = Services;
+			path = App;
 			sourceTree = "<group>";
 		};
 		62F630232139E0F8F79E227B /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				0580EF05175D43177968F398 /* AgentRelayiOS.app */,
 				4A03EFC8E7FE0FD61CECD6B1 /* AgentRelayMac.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		7760D645E7BC364B43E2751F /* Agents */ = {
+		8E45877B91DF826898361F66 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				03476B55CF72EB62F8DCBD13 /* AgentListView.swift */,
+				BF93776B581D9508394799D7 /* PrivacyInfo.xcprivacy */,
 			);
-			path = Agents;
-			sourceTree = "<group>";
-		};
-		8535380298C880D5E88B9F94 /* Settings */ = {
-			isa = PBXGroup;
-			children = (
-				066DB2B6DC7A1B397FD67A4B /* LaunchSettingsView.swift */,
-				F5D2740D9C29B185812D52A4 /* PauseAgentsView.swift */,
-			);
-			path = Settings;
-			sourceTree = "<group>";
-		};
-		894D58B8C9E55747FEADDC01 /* Handoffs */ = {
-			isa = PBXGroup;
-			children = (
-				BA1F7DB0B3BB1B21EE55589A /* HandoffCardView.swift */,
-				D5F981D5DAC98743FAA0430F /* HandoffComposerView.swift */,
-			);
-			path = Handoffs;
-			sourceTree = "<group>";
-		};
-		9A78D07CC956BCDCED042624 /* Notifications */ = {
-			isa = PBXGroup;
-			children = (
-				AADB89CA52E7B0DBB6F70D1A /* NotificationCoordinator.swift */,
-			);
-			path = Notifications;
-			sourceTree = "<group>";
-		};
-		A86A068FDE81102040A0C02C /* API */ = {
-			isa = PBXGroup;
-			children = (
-				BA8022A0F5FB1AEFAA742D47 /* AppAPIClient.swift */,
-				1451F1AFACD890A04E900004 /* EventStreamClient.swift */,
-			);
-			path = API;
-			sourceTree = "<group>";
-		};
-		AB9421D35F5B62BC330EE30B /* Sidebar */ = {
-			isa = PBXGroup;
-			children = (
-				0F9C5D88B20A5CA696AA6C2F /* SidebarView.swift */,
-			);
-			path = Sidebar;
+			name = Resources;
+			path = App/Resources;
 			sourceTree = "<group>";
 		};
 		B0BF47E3BD6BFFEEABF24F73 /* MacApp */ = {
 			isa = PBXGroup;
 			children = (
 				A881D4F6A1BCE835EF717A42 /* AgentRelayMacApp.swift */,
-				5123055AD72237409B91D611 /* AppBootstrap.swift */,
-				B747CF69BE31285160DE79DB /* AppModel.swift */,
-				7760D645E7BC364B43E2751F /* Agents */,
-				A86A068FDE81102040A0C02C /* API */,
-				894D58B8C9E55747FEADDC01 /* Handoffs */,
-				23B8214508F5A6424F170452 /* Inbox */,
-				9A78D07CC956BCDCED042624 /* Notifications */,
-				344BD28D5B89FBD9A11D7795 /* Preview */,
-				1D0E1E5469D088B1DC3958C8 /* Projects */,
-				24B5995CAEC29FFA9A153662 /* Recents */,
-				047BF4B5912F3C7DB369EA2A /* Search */,
-				50C6E7F80BD0D2BAF91B8443 /* Services */,
-				8535380298C880D5E88B9F94 /* Settings */,
-				AB9421D35F5B62BC330EE30B /* Sidebar */,
-				1E06AB2F63E9BA2F5889B7ED /* Status */,
-				F510075207C743F604531542 /* Threads */,
-				24F547517C0A78AA440AC51A /* ViewModels */,
 			);
 			name = MacApp;
 			path = App/MacApp;
@@ -248,20 +106,13 @@
 		D89CBA5AE5A9DBB05F7474A6 = {
 			isa = PBXGroup;
 			children = (
+				3787279CD3B682A601E3C090 /* App */,
+				237513810EC275AD76B18460 /* iOS */,
 				B0BF47E3BD6BFFEEABF24F73 /* MacApp */,
 				C41912913EC6FF0977B639EA /* Packages */,
+				8E45877B91DF826898361F66 /* Resources */,
 				62F630232139E0F8F79E227B /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		F510075207C743F604531542 /* Threads */ = {
-			isa = PBXGroup;
-			children = (
-				9F42482B3B96A2D8406B178A /* MessageRowView.swift */,
-				C317BDAD215B6B2B2D675448 /* ThreadDetailView.swift */,
-				D77A6E1A0AE962A1DF6F75B3 /* ThreadListView.swift */,
-			);
-			path = Threads;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -272,6 +123,7 @@
 			buildConfigurationList = 1677EDD3913ADA023DAF2AE9 /* Build configuration list for PBXNativeTarget "AgentRelayMac" */;
 			buildPhases = (
 				FFA57FC7D2E5908CB3E63B7B /* Sources */,
+				021680B8B30BACB47F1F0B6E /* Resources */,
 				5CE3A58B7C734EBD5E6BBD0C /* Frameworks */,
 			);
 			buildRules = (
@@ -281,9 +133,31 @@
 			name = AgentRelayMac;
 			packageProductDependencies = (
 				94C94C890571A31792889087 /* AppCore */,
+				43891F51B718131B6AACC58D /* RelayCloudClient */,
+				09FB9500CA50580106BD499E /* RelayCloudUI */,
 			);
 			productName = AgentRelayMac;
 			productReference = 4A03EFC8E7FE0FD61CECD6B1 /* AgentRelayMac.app */;
+			productType = "com.apple.product-type.application";
+		};
+		5F9DD13666ECE878C6F7CBFF /* AgentRelayiOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9FEEE6CF12C5000C974AEC8C /* Build configuration list for PBXNativeTarget "AgentRelayiOS" */;
+			buildPhases = (
+				A2D9262A4142809171DF228D /* Sources */,
+				2DB2FF0D780CFE3467A56C09 /* Resources */,
+				48BDEDA988C6A488CB04390B /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AgentRelayiOS;
+			packageProductDependencies = (
+				769D295DAB55980C411C60D6 /* RelayCloudUI */,
+			);
+			productName = AgentRelayiOS;
+			productReference = 0580EF05175D43177968F398 /* AgentRelayiOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -294,9 +168,10 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
 			};
 			buildConfigurationList = 9FDA22DEAC14A617B3DE75F2 /* Build configuration list for PBXProject "AgentRelay" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -309,64 +184,98 @@
 				6A26AD84AEDB8CC3EF7830A0 /* XCLocalSwiftPackageReference "." */,
 			);
 			preferredProjectObjectVersion = 77;
+			productRefGroup = 62F630232139E0F8F79E227B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				5C1126C364C152F2905EA5E7 /* AgentRelayMac */,
+				5F9DD13666ECE878C6F7CBFF /* AgentRelayiOS */,
 			);
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		021680B8B30BACB47F1F0B6E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4992C0A87F09A78D13513EDD /* Assets.xcassets in Resources */,
+				8E13E14F966FEA26BE239008 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2DB2FF0D780CFE3467A56C09 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				759E254AEECAAE9BCF6A21D0 /* Assets.xcassets in Resources */,
+				1EA30CCE73D9AE979828FF58 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
+		A2D9262A4142809171DF228D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				203A9823B2732429B1D9495D /* AgentRelayIOSApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FFA57FC7D2E5908CB3E63B7B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				47BC81860DB23F92041AC8C3 /* AgentListView.swift in Sources */,
 				2F362716F617DEBDC2F97C9E /* AgentRelayMacApp.swift in Sources */,
-				FB992B9BDF5F68DE71395FB6 /* AppAPIClient.swift in Sources */,
-				B2E2DB7618718D07D9E046FF /* AppBootstrap.swift in Sources */,
-				32A8BDFCA79C1B6F821669DA /* AppModel.swift in Sources */,
-				E21137A6210C3188016D30D5 /* EventStreamClient.swift in Sources */,
-				30C26E326593A323A4DD6D68 /* HandoffCardView.swift in Sources */,
-				AD47D3AF426AD5E8C90E38E1 /* HandoffComposerView.swift in Sources */,
-				FA82A7DE151FC1B9827CDA53 /* InboxView.swift in Sources */,
-				E659BED1CF38CA8EBA94533A /* InboxViewModel.swift in Sources */,
-				4DC364AAE63B940196453135 /* LaunchSettingsView.swift in Sources */,
-				1C7E8AC39206517F0CB31F1C /* MessageRowView.swift in Sources */,
-				76236B9A259F062E0F66CE70 /* NotificationCoordinator.swift in Sources */,
-				77BC23528DF1C731D35DF014 /* PauseAgentsView.swift in Sources */,
-				D23BE3F0958D43F7FD356B66 /* PreviewData.swift in Sources */,
-				6DC8798C66A049C26D0862D3 /* ProjectDetailView.swift in Sources */,
-				F9813CFE6D1831AAAD26C911 /* ProjectDetailViewModel.swift in Sources */,
-				A99C19ADAD31B8C8A6D36643 /* ProjectListView.swift in Sources */,
-				AE582A5EBECD1D0C0621913B /* ProjectsWorkspaceView.swift in Sources */,
-				977263F5356C806D79E48714 /* ProjectsWorkspaceViewModel.swift in Sources */,
-				CB5F9D8361A35C8FC46C130F /* RecentsView.swift in Sources */,
-				B79798263E0633ECDDDE412D /* SearchView.swift in Sources */,
-				2633E4E572406DD8E19E70EE /* ServiceController.swift in Sources */,
-				C1AA061F1844E0A077C4653F /* ServiceStatusView.swift in Sources */,
-				91CAB4885E67A554028CA912 /* SidebarView.swift in Sources */,
-				9FFFA47E3F2D62C8793A13BC /* ThreadDetailView.swift in Sources */,
-				9DC7053FBF59291E7EC2BC59 /* ThreadDetailViewModel.swift in Sources */,
-				4817112EF8061BCDF2777885 /* ThreadListView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		273E90544C856D3895B54F48 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 4;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Agent Relay";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.agentrelay.app;
+				PRODUCT_NAME = "Agent Relay";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 		2E63F9B33D2F19868FA46C14 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/MacApp.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 4;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Agent Relay";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.agentrelay.AgentRelayMac;
+				MARKETING_VERSION = 0.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.agentrelay.app;
+				PRODUCT_NAME = "Agent Relay";
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -375,16 +284,46 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/MacApp.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 4;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Agent Relay";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.agentrelay.AgentRelayMac;
+				MARKETING_VERSION = 0.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.agentrelay.app;
+				PRODUCT_NAME = "Agent Relay";
 				SDKROOT = macosx;
 			};
 			name = Debug;
+		};
+		6253AD51AC5478BB413E9E7C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 4;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Agent Relay";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.agentrelay.app;
+				PRODUCT_NAME = "Agent Relay";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
 		};
 		7CCF8500DA427A60908D7545 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -431,10 +370,11 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -492,11 +432,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -524,6 +465,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		9FEEE6CF12C5000C974AEC8C /* Build configuration list for PBXNativeTarget "AgentRelayiOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				273E90544C856D3895B54F48 /* Debug */,
+				6253AD51AC5478BB413E9E7C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -534,6 +484,18 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		09FB9500CA50580106BD499E /* RelayCloudUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RelayCloudUI;
+		};
+		43891F51B718131B6AACC58D /* RelayCloudClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RelayCloudClient;
+		};
+		769D295DAB55980C411C60D6 /* RelayCloudUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RelayCloudUI;
+		};
 		94C94C890571A31792889087 /* AppCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AppCore;

@@ -5,19 +5,22 @@ import Foundation
 public struct MessageCursor: Codable, Equatable, Sendable {
     public let createdAt: Date
     public let messageID: String
+    public let sequence: Int?
 
-    public init(createdAt: Date, messageID: String) {
+    public init(createdAt: Date, messageID: String, sequence: Int? = nil) {
         self.createdAt = createdAt
         self.messageID = messageID
+        self.sequence = sequence
     }
 
     public init(message: Message) {
-        self.init(createdAt: message.createdAt, messageID: message.id)
+        self.init(createdAt: message.createdAt, messageID: message.id, sequence: message.sequence)
     }
 
     private enum CodingKeys: String, CodingKey {
         case createdAt = "created_at"
         case messageID = "message_id"
+        case sequence
     }
 
     public init(from decoder: any Decoder) throws {
@@ -32,11 +35,13 @@ public struct MessageCursor: Codable, Equatable, Sendable {
         }
         self.createdAt = createdAt
         self.messageID = try container.decode(String.self, forKey: .messageID)
+        self.sequence = try container.decodeIfPresent(Int.self, forKey: .sequence)
     }
 
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(PreciseDateCodec.string(from: createdAt), forKey: .createdAt)
         try container.encode(messageID, forKey: .messageID)
+        try container.encodeIfPresent(sequence, forKey: .sequence)
     }
 }

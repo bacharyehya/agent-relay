@@ -2,6 +2,7 @@ import AppKit
 import Darwin
 import Foundation
 import MacAppSupport
+import RelayCloudClient
 import SwiftUI
 
 @MainActor
@@ -37,7 +38,7 @@ private final class LocalRuntime {
         environment: [:],
         logName: "CoreService"
     )
-    private lazy var workerSpecs: [HelperSpec] = {
+    private var workerSpecs: [HelperSpec] {
         let supportDirectory = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/AgentRelay", isDirectory: true)
         let chatWorkspace = supportDirectory.appendingPathComponent("ChatWorkspace", isDirectory: true)
@@ -47,9 +48,9 @@ private final class LocalRuntime {
             attributes: [.posixPermissions: 0o700]
         )
 
-        return ["codex-main", "codex-research"].map { actorID in
+        var specs = ["codex-main", "codex-research"].map { actorID in
             HelperSpec(
-                key: actorID,
+                key: "local-\(actorID)",
                 executableName: "CodexRelayWorker",
                 environment: [
                     "AGENT_RELAY_ACTOR_ID": actorID,
@@ -60,7 +61,33 @@ private final class LocalRuntime {
                 logName: actorID
             )
         }
-    }()
+
+        if let configuration = try? RelayCloudAgentInstaller.load() {
+            for actorID in configuration.actorIDs {
+                guard let tokenURL = try? RelayCloudAgentInstaller.tokenFileURL(actorID: actorID) else {
+                    continue
+                }
+                specs.append(
+                    HelperSpec(
+                        key: "cloud-\(actorID)",
+                        executableName: "CodexRelayWorker",
+                        environment: [
+                            "AGENT_RELAY_ACTOR_ID": actorID,
+                            "AGENT_RELAY_TRANSPORT": "cloud",
+                            "AGENT_RELAY_THREAD_ID": configuration.roomID,
+                            "AGENT_RELAY_POLL_INTERVAL_MS": "1000",
+                            "AGENT_RELAY_CODEX_CWD": chatWorkspace.path(percentEncoded: false),
+                            "AGENT_RELAY_CLOUD_URL": configuration.serverURL.absoluteString,
+                            "AGENT_RELAY_CLOUD_TOKEN_FILE": tokenURL.path(percentEncoded: false),
+                            "AGENT_RELAY_CLOUD_DEVICE_NAME": ProcessInfo.processInfo.hostName,
+                        ],
+                        logName: "cloud-\(actorID)"
+                    )
+                )
+            }
+        }
+        return specs
+    }
 
     private var children: [String: Child] = [:]
     private var ownsCoreService = false

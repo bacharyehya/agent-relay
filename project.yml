@@ -1,6 +1,9 @@
 name: AgentRelay
 options:
   bundleIdPrefix: io.agentrelay
+  deploymentTarget:
+    macOS: "15.0"
+    iOS: "18.0"
 packages:
   AgentRelayPackage:
     path: .
@@ -10,9 +13,47 @@ targets:
     platform: macOS
     settings:
       base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.agentrelay.app
+        PRODUCT_NAME: Agent Relay
+        MARKETING_VERSION: 0.4.0
+        CURRENT_PROJECT_VERSION: 4
         GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Agent Relay
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        CODE_SIGN_ENTITLEMENTS: App/MacApp.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     sources:
-      - App/MacApp
+      - App/MacApp/AgentRelayMacApp.swift
+      - App/Assets.xcassets
+      - App/Resources
     dependencies:
       - package: AgentRelayPackage
         product: AppCore
+      - package: AgentRelayPackage
+        product: RelayCloudClient
+      - package: AgentRelayPackage
+        product: RelayCloudUI
+  AgentRelayiOS:
+    type: application
+    platform: iOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.agentrelay.app
+        PRODUCT_NAME: Agent Relay
+        MARKETING_VERSION: 0.4.0
+        CURRENT_PROJECT_VERSION: 4
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Agent Relay
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    sources:
+      - App/iOS
+      - App/Assets.xcassets
+      - App/Resources
+    dependencies:
+      - package: AgentRelayPackage
+        product: RelayCloudUI

@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "agent-relay-personal",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-31",
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "agent-relay-personal",
+      "database_id": "d3051874-d901-4f97-b1f5-a8d8cc4629c5",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

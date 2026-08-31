@@ -3,10 +3,12 @@ import PackageDescription
 
 let package = Package(
     name: "AgentRelay",
-    platforms: [.macOS(.v15)],
+    platforms: [.macOS(.v15), .iOS(.v18)],
     products: [
         .library(name: "AppCore", targets: ["AppCore"]),
         .library(name: "CodexAppServer", targets: ["CodexAppServer"]),
+        .library(name: "RelayCloudClient", targets: ["RelayCloudClient"]),
+        .library(name: "RelayCloudUI", targets: ["RelayCloudUI"]),
         .executable(name: "CoreService", targets: ["CoreService"]),
         .executable(name: "MCPAdapter", targets: ["MCPAdapter"]),
         .executable(name: "CodexRelayWorker", targets: ["CodexRelayWorker"]),
@@ -19,6 +21,15 @@ let package = Package(
     targets: [
         .target(name: "AppCore"),
         .target(name: "CodexAppServer"),
+        .target(
+            name: "RelayCloudClient",
+            dependencies: ["AppCore"]
+        ),
+        .target(
+            name: "RelayCloudUI",
+            dependencies: ["AppCore", "RelayCloudClient"],
+            path: "App/CloudUI"
+        ),
         .target(
             name: "CoreStore",
             dependencies: [
@@ -36,7 +47,7 @@ let package = Package(
         ),
         .target(
             name: "MacAppSupport",
-            dependencies: ["AppCore"],
+            dependencies: ["AppCore", "RelayCloudClient", "RelayCloudUI"],
             path: "App/MacApp",
             exclude: ["AgentRelayMacApp.swift"]
         ),
@@ -44,11 +55,11 @@ let package = Package(
         .executableTarget(name: "MCPAdapter", dependencies: ["AppCore"]),
         .executableTarget(
             name: "CodexRelayWorker",
-            dependencies: ["AppCore", "CodexAppServer"]
+            dependencies: ["AppCore", "CodexAppServer", "RelayCloudClient"]
         ),
         .executableTarget(
             name: "AgentRelayDesktop",
-            dependencies: ["MacAppSupport"]
+            dependencies: ["MacAppSupport", "RelayCloudClient"]
         ),
         .testTarget(name: "AppCoreTests", dependencies: ["AppCore"]),
         .testTarget(name: "CodexAppServerTests", dependencies: ["CodexAppServer"]),
