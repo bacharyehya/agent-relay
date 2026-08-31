@@ -6,6 +6,10 @@ import RelayCloudClient
 @MainActor
 @Observable
 public final class RelayCloudModel {
+    static let syncIntervalSeconds = 15
+    static let presenceIntervalSeconds = 60
+    static let maximumSyncRetrySeconds = 60
+
     private enum AgentHostEnrollmentError: LocalizedError {
         case unavailable
         case humanInvitation
@@ -60,6 +64,7 @@ public final class RelayCloudModel {
     private var api: RelayCloudAPI?
     private var cursor = 0
     private var syncTask: Task<Void, Never>?
+    private var lastPresenceUpdateAt: Date?
 
     public init(
         store: RelaySessionStore = .live,
@@ -78,25 +83,44 @@ public final class RelayCloudModel {
                 return
             }
             let api = try RelayCloudAPI(baseURL: saved.session.serverURL, token: saved.token)
-            let identity = try await api.me()
-            let refreshedSession = RelayStoredSession(
-                serverURL: saved.session.serverURL,
-                workspace: identity.workspace,
-                actor: identity.actor,
-                deviceID: identity.device.id,
-                deviceName: identity.device.name ?? identity.device.deviceName ?? saved.session.deviceName
-            )
             self.api = api
-            storedSession = refreshedSession
-            workspace = identity.workspace
-            currentActor = identity.actor
-            phase = .signedIn
-            connectionState = .connected
-            try? store.save(session: refreshedSession, token: saved.token)
-            await syncOnce()
-            refreshLocalAgentInstallationState()
-            startSyncLoop()
+            do {
+                let identity = try await api.me()
+                let refreshedSession = RelayStoredSession(
+                    serverURL: saved.session.serverURL,
+                    workspace: identity.workspace,
+                    actor: identity.actor,
+                    deviceID: identity.device.id,
+                    deviceName: identity.device.name ?? identity.device.deviceName ?? saved.session.deviceName
+                )
+                storedSession = refreshedSession
+                workspace = identity.workspace
+                currentActor = identity.actor
+                phase = .signedIn
+                connectionState = .connected
+                try? store.save(session: refreshedSession, token: saved.token)
+                await syncOnce()
+                refreshLocalAgentInstallationState()
+                startSyncLoop()
+            } catch {
+                if Self.isAuthenticationFailure(error) {
+                    self.api = nil
+                    phase = .signedOut
+                    connectionState = .offline
+                    errorMessage = error.localizedDescription
+                } else {
+                    storedSession = saved.session
+                    workspace = saved.session.workspace
+                    currentActor = saved.session.actor
+                    phase = .signedIn
+                    connectionState = .offline
+                    errorMessage = "Relay is temporarily unavailable. Your session is safe and will reconnect automatically."
+                    refreshLocalAgentInstallationState()
+                    startSyncLoop()
+                }
+            }
         } catch {
+            api = nil
             phase = .signedOut
             connectionState = .offline
             errorMessage = error.localizedDescription
@@ -179,7 +203,14 @@ public final class RelayCloudModel {
                 hasMore = snapshot.hasMore
             }
             if let storedSession {
-                _ = try? await api.updatePresence(state: "online", deviceName: storedSession.deviceName)
+                let now = Date()
+                let shouldUpdatePresence = connectionState != .connected
+                    || lastPresenceUpdateAt.map { now.timeIntervalSince($0) >= Double(Self.presenceIntervalSeconds) } != false
+                if shouldUpdatePresence,
+                   (try? await api.updatePresence(state: "online", deviceName: storedSession.deviceName)) != nil
+                {
+                    lastPresenceUpdateAt = now
+                }
             }
             connectionState = .connected
             errorMessage = nil
@@ -192,15 +223,28 @@ public final class RelayCloudModel {
     public func startSyncLoop() {
         guard syncTask == nil else { return }
         syncTask = Task { [weak self] in
+            var consecutiveFailures = self?.connectionState == .offline ? 1 : 0
             while !Task.isCancelled {
-                await self?.syncOnce()
                 do {
-                    try await Task.sleep(for: .seconds(2))
+                    let delay = Self.syncDelaySeconds(consecutiveFailures: consecutiveFailures)
+                    try await Task.sleep(for: .seconds(delay))
                 } catch {
                     break
                 }
+                guard let self else { break }
+                await self.syncOnce()
+                if self.connectionState == .connected {
+                    consecutiveFailures = 0
+                } else {
+                    consecutiveFailures += 1
+                }
             }
         }
+    }
+
+    static func syncDelaySeconds(consecutiveFailures: Int) -> Int {
+        let exponent = min(max(consecutiveFailures - 1, 0), 2)
+        return min(maximumSyncRetrySeconds, syncIntervalSeconds * (1 << exponent))
     }
 
     public func stopSyncLoop() {
@@ -370,6 +414,7 @@ public final class RelayCloudModel {
         presence = []
         selectedRoomID = nil
         cursor = 0
+        lastPresenceUpdateAt = nil
         phase = .signedOut
         connectionState = .offline
         localAgentSetupMessage = nil
@@ -467,6 +512,18 @@ public final class RelayCloudModel {
         guard var components = URLComponents(string: candidate), components.host != nil else { return nil }
         components.path = components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         return components.url
+    }
+
+    private static func isAuthenticationFailure(_ error: Error) -> Bool {
+        guard let relayError = error as? RelayCloudError else { return false }
+        switch relayError {
+        case .missingCredential:
+            return true
+        case let .server(status, _):
+            return status == 401 || status == 403
+        case .invalidResponse, .invalidServerURL:
+            return false
+        }
     }
 
     private func refreshLocalAgentInstallationState() {

@@ -78,7 +78,7 @@ private final class LocalRuntime {
                             "AGENT_RELAY_ACTOR_ID": actorID,
                             "AGENT_RELAY_TRANSPORT": "cloud",
                             "AGENT_RELAY_THREAD_ID": configuration.roomID,
-                            "AGENT_RELAY_POLL_INTERVAL_MS": "1000",
+                            "AGENT_RELAY_POLL_INTERVAL_MS": "15000",
                             "AGENT_RELAY_CODEX_CWD": chatWorkspace.path(percentEncoded: false),
                             "AGENT_RELAY_CLOUD_URL": configuration.serverURL.absoluteString,
                             "AGENT_RELAY_CLOUD_TOKEN_FILE": tokenURL.path(percentEncoded: false),

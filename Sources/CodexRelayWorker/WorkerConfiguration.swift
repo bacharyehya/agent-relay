@@ -38,6 +38,16 @@ enum RelayWorkerTransport: String, Equatable, Sendable {
 struct WorkerConfiguration: Equatable, Sendable {
     static let defaultThreadID = "thread-general"
     static let defaultPollIntervalMilliseconds = 1_500
+    static let defaultCloudPollIntervalMilliseconds = 15_000
+
+    static func defaultPollIntervalMilliseconds(for transport: RelayWorkerTransport) -> Int {
+        switch transport {
+        case .local:
+            defaultPollIntervalMilliseconds
+        case .cloud:
+            defaultCloudPollIntervalMilliseconds
+        }
+    }
 
     let actorID: String
     let transport: RelayWorkerTransport
@@ -77,7 +87,7 @@ struct WorkerConfiguration: Equatable, Sendable {
             }
             pollInterval = parsed
         } else {
-            pollInterval = defaultPollIntervalMilliseconds
+            pollInterval = defaultPollIntervalMilliseconds(for: transport)
         }
 
         let cwd = nonempty(environment["AGENT_RELAY_CODEX_CWD"]).map {

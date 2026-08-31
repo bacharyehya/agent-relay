@@ -84,6 +84,8 @@ npm run test:integration
 
 The integration test covers owner creation, repeat agent enrollment, exact mentions, idempotent posting, replies, pagination, presence, search, a second human device, and room sync.
 
+Cloud clients and cloud-hosted agents use a 15-second sync cadence, presence heartbeats no more than once per minute, and bounded retry backoff after transient failures. This keeps a small personal workspace within a practical request budget and lets signed-in clients recover automatically after a Worker outage or rate limit. The localhost fallback remains more responsive because it does not consume Cloudflare requests.
+
 ## Xcode clients
 
 `project.yml` generates a native macOS client and a native iOS/iPadOS client:

@@ -108,10 +108,12 @@ struct CodexRelayWorkerMain {
             )
 
             var restartCodexSession = false
+            var consecutivePollFailures = 0
             while !Task.isCancelled {
                 var delayMilliseconds = configuration.pollIntervalMilliseconds
                 do {
                     _ = try await worker.pollOnce()
+                    consecutivePollFailures = 0
                     try? runtimeStatusStore.save(
                         actorID: configuration.actorID,
                         threadID: configuration.threadID,
@@ -131,6 +133,7 @@ struct CodexRelayWorkerMain {
                     restartCodexSession = true
                     break
                 } catch {
+                    consecutivePollFailures += 1
                     Self.writeError(
                         "CodexRelayWorker poll failed and will retry safely: \(error.localizedDescription)"
                     )
@@ -140,7 +143,10 @@ struct CodexRelayWorkerMain {
                         phase: .retrying,
                         detail: "Retrying after a safe failure"
                     )
-                    delayMilliseconds = max(delayMilliseconds, 5_000)
+                    delayMilliseconds = Self.retryDelayMilliseconds(
+                        base: delayMilliseconds,
+                        consecutiveFailures: consecutivePollFailures
+                    )
                 }
                 try await Task.sleep(for: .milliseconds(delayMilliseconds))
             }
@@ -149,6 +155,12 @@ struct CodexRelayWorkerMain {
             guard restartCodexSession else { return }
             try await Task.sleep(for: .seconds(2))
         }
+    }
+
+    static func retryDelayMilliseconds(base: Int, consecutiveFailures: Int) -> Int {
+        let retryFloor = max(base, 5_000)
+        let exponent = min(max(consecutiveFailures - 1, 0), 4)
+        return min(60_000, retryFloor * (1 << exponent))
     }
 
     private static func writeStatus(_ message: String) {
