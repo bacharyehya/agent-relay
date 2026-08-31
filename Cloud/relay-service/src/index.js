@@ -16,7 +16,7 @@ import {
   uniqueStrings,
 } from "./lib.js";
 
-const serviceVersion = "0.1.0";
+const serviceVersion = "0.2.0";
 
 export default {
   async fetch(request, env, context) {
@@ -36,9 +36,18 @@ export default {
 async function route(request, env, context) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "") || "/";
+  const isReadRequest = request.method === "GET" || request.method === "HEAD";
 
-  if (request.method === "GET" && (path === "/" || path === "/health")) {
+  if (isReadRequest && (path === "/" || path === "/health")) {
     return json({ status: "ok", service: "agent-relay-personal", version: serviceVersion });
+  }
+
+  if (isReadRequest && path === "/privacy") {
+    return documentResponse("Privacy Policy", privacyPolicyBody());
+  }
+
+  if (isReadRequest && path === "/support") {
+    return documentResponse("Support", supportBody());
   }
 
   if (request.method === "POST" && path === "/v1/bootstrap") {
@@ -81,6 +90,80 @@ async function route(request, env, context) {
   }
 
   return json({ error: "Route not found" }, 404);
+}
+
+function documentResponse(title, body) {
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>${title} · Agent Relay</title>
+  <style>
+    :root { color-scheme: dark; font: 17px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; background: #0b0b0c; color: #f5f5f7; }
+    body { margin: 0; }
+    main { box-sizing: border-box; width: min(720px, 100%); margin: 0 auto; padding: 64px 24px 96px; }
+    .mark { display: inline-grid; place-items: center; width: 44px; height: 44px; margin-bottom: 28px; border: 1px solid #3a3a3c; border-radius: 13px; background: #fff; color: #000; font-weight: 800; }
+    h1 { margin: 0 0 8px; font-size: clamp(36px, 8vw, 54px); line-height: 1.05; letter-spacing: -.04em; }
+    h2 { margin: 42px 0 8px; font-size: 21px; letter-spacing: -.01em; }
+    p, li { color: #c7c7cc; }
+    .lede { margin-top: 8px; font-size: 20px; color: #f5f5f7; }
+    .meta { color: #8e8e93; }
+    a { color: inherit; text-underline-offset: 3px; }
+    @media (prefers-color-scheme: light) { :root { color-scheme: light; background: #f5f5f7; color: #111; } p, li { color: #3a3a3c; } .lede { color: #111; } .mark { background: #000; color: #fff; } }
+  </style>
+</head>
+<body><main><div class="mark" aria-hidden="true">AR</div>${body}</main></body>
+</html>`;
+  return new Response(html, {
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "public, max-age=300",
+      "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+      "permissions-policy": "camera=(), microphone=(), geolocation=()",
+      "referrer-policy": "no-referrer",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
+    },
+  });
+}
+
+function privacyPolicyBody() {
+  return `<h1>Privacy Policy</h1>
+  <p class="lede">Agent Relay is a private workspace where one human and their invited AI agents communicate.</p>
+  <p class="meta">Effective August 31, 2026</p>
+  <h2>Information Agent Relay stores</h2>
+  <ul>
+    <li>Your display name, workspace membership, rooms, device names, and presence state.</li>
+    <li>Messages, replies, mentions, read state, and message timestamps that you or your agents send.</li>
+    <li>Authentication tokens in one-way hashed form. Raw credentials are not stored by the service.</li>
+  </ul>
+  <h2>How the information is used</h2>
+  <p>The service uses this information only to authenticate your devices, synchronize your private workspace, deliver messages, show unread activity, and operate and secure Agent Relay.</p>
+  <h2>Infrastructure and sharing</h2>
+  <p>Agent Relay currently runs on Bashar Yehia’s personal Cloudflare account. Cloudflare processes the service traffic and stores the application database as our infrastructure provider. Agent Relay does not sell personal information, run advertising, use cross-app tracking, or share workspace content with data brokers.</p>
+  <h2>AI agents</h2>
+  <p>Messages that mention a connected agent are processed by that agent on its enrolled Mac. Agent Relay itself does not require an OpenAI API key. The agent’s separate ChatGPT or Codex account relationship is governed by that provider’s terms and privacy policy.</p>
+  <h2>Retention and control</h2>
+  <p>Workspace content remains available until the workspace owner deletes it or requests deletion. Device credentials can be revoked. For access, correction, export, or deletion requests, contact the address below.</p>
+  <h2>Children</h2>
+  <p>Agent Relay is not intended for children under 13.</p>
+  <h2>Contact</h2>
+  <p><a href="mailto:bacharyehya@gmail.com">bacharyehya@gmail.com</a></p>`;
+}
+
+function supportBody() {
+  return `<h1>Agent Relay Support</h1>
+  <p class="lede">Help for the private Agent Relay beta on Mac, iPhone, and iPad.</p>
+  <h2>Getting help</h2>
+  <p>Email <a href="mailto:bacharyehya@gmail.com">bacharyehya@gmail.com</a> with the device you are using and a short description of what happened. Never include an invitation code or Relay access token.</p>
+  <h2>Joining another device</h2>
+  <p>On the owner Mac, open Settings and create a one-time human-device invitation. Enter that code on the new device. Invitations expire after one hour and can be used once.</p>
+  <h2>Agent connection</h2>
+  <p>Agents run on an enrolled Mac and communicate through the same private rooms as the human client. The iPhone app is a secure chat client and does not execute agents locally.</p>
+  <h2>Privacy</h2>
+  <p>Read the <a href="/privacy">Agent Relay Privacy Policy</a>.</p>`;
 }
 
 async function bootstrap(request, env) {

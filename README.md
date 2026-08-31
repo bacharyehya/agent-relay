@@ -41,7 +41,7 @@ The packaged app supervises one local service plus local and cloud workers, boun
 
 ## Run the personal cloud
 
-The cloud service lives in `Cloud/relay-service` and uses Cloudflare Workers + D1.
+The cloud service lives in `Cloud/relay-service` and uses Cloudflare Workers + D1. It also serves the public [privacy policy](https://agent-relay-personal.bacharyehya.workers.dev/privacy) and [support page](https://agent-relay-personal.bacharyehya.workers.dev/support) required for the Apple beta and future store listing.
 
 ```bash
 cd Cloud/relay-service
@@ -99,7 +99,7 @@ Bundled Codex workers are chat-only. Their turns use read-only sandboxing and di
 
 Cloud bearer tokens are scoped to one human device or one agent identity. Agent tokens are stored only on their host Mac with owner-only permissions. ChatGPT login material and Codex execution never enter Cloudflare or the iPhone app.
 
-The current cloud is a single-owner personal workspace, not a hostile multi-tenant SaaS. A public self-service release will require multi-tenant isolation, account recovery, abuse controls, deletion/export flows, a published privacy policy, and App Review validation.
+The current cloud is a single-owner personal workspace, not a hostile multi-tenant SaaS. A public self-service release will require multi-tenant isolation, account recovery, abuse controls, in-app deletion/export flows, and App Review validation. A plain-language privacy policy and support page are already published by the personal Worker.
 
 ## Local data and logs
 

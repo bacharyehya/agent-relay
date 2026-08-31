@@ -23,6 +23,19 @@ async function request(path, { method = "GET", token, body, headers = {} } = {})
 const health = await request("/health");
 assert.equal(health.payload.status, "ok");
 
+for (const path of ["/privacy", "/support"]) {
+  const response = await fetch(`${baseURL}${path}`);
+  const page = await response.text();
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") ?? "", /^text\/html/);
+  assert.match(response.headers.get("content-security-policy") ?? "", /default-src 'none'/);
+  assert.match(page, /Agent Relay/);
+
+  const headResponse = await fetch(`${baseURL}${path}`, { method: "HEAD" });
+  assert.equal(headResponse.status, 200);
+  assert.match(headResponse.headers.get("content-type") ?? "", /^text\/html/);
+}
+
 const bootstrap = await request("/v1/bootstrap", {
   method: "POST",
   headers: { "x-relay-bootstrap-key": bootstrapKey },
