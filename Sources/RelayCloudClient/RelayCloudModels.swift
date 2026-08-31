@@ -109,12 +109,25 @@ public struct RelayPresence: Codable, Equatable, Sendable {
     public let deviceName: String
     public let state: String
     public let lastSeenAt: Date
+
+    public init(actorID: String, deviceName: String, state: String, lastSeenAt: Date) {
+        self.actorID = actorID
+        self.deviceName = deviceName
+        self.state = state
+        self.lastSeenAt = lastSeenAt
+    }
 }
 
 public struct RelayReadReceipt: Codable, Equatable, Sendable {
     public let roomID: String
     public let lastReadSequence: Int
     public let updatedAt: Date
+
+    public init(roomID: String, lastReadSequence: Int, updatedAt: Date) {
+        self.roomID = roomID
+        self.lastReadSequence = lastReadSequence
+        self.updatedAt = updatedAt
+    }
 }
 
 public struct RelayIdentityEnvelope: Codable, Equatable, Sendable {
@@ -163,6 +176,28 @@ public struct RelaySyncSnapshot: Codable, Equatable, Sendable {
     public let presence: [RelayPresence]
     public let nextCursor: Int
     public let hasMore: Bool
+
+    public init(
+        workspace: RelayWorkspace,
+        currentActorID: String,
+        actors: [RelayCloudActor],
+        rooms: [RelayCloudRoom],
+        messages: [RelayCloudMessage],
+        readReceipts: [RelayReadReceipt],
+        presence: [RelayPresence],
+        nextCursor: Int,
+        hasMore: Bool
+    ) {
+        self.workspace = workspace
+        self.currentActorID = currentActorID
+        self.actors = actors
+        self.rooms = rooms
+        self.messages = messages
+        self.readReceipts = readReceipts
+        self.presence = presence
+        self.nextCursor = nextCursor
+        self.hasMore = hasMore
+    }
 }
 
 public struct RelayServiceHealth: Codable, Equatable, Sendable {

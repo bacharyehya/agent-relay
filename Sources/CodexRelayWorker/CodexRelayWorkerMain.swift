@@ -31,6 +31,11 @@ struct CodexRelayWorkerMain {
                     actorID: configuration.actorID,
                     actorCredential: configuration.actorCredential
                 )
+            case .cloudKit:
+                coreClient = try RelayCloudKitWorkerAPIClient(
+                    actorID: configuration.actorID,
+                    supportDirectory: configuration.supportDirectory
+                )
             case .cloud:
                 guard let cloudServiceURL = configuration.cloudServiceURL,
                       let cloudToken = configuration.cloudToken

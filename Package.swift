@@ -8,6 +8,7 @@ let package = Package(
         .library(name: "AppCore", targets: ["AppCore"]),
         .library(name: "CodexAppServer", targets: ["CodexAppServer"]),
         .library(name: "RelayCloudClient", targets: ["RelayCloudClient"]),
+        .library(name: "RelayCloudKit", targets: ["RelayCloudKit"]),
         .library(name: "RelayCloudUI", targets: ["RelayCloudUI"]),
         .executable(name: "CoreService", targets: ["CoreService"]),
         .executable(name: "MCPAdapter", targets: ["MCPAdapter"]),
@@ -26,8 +27,12 @@ let package = Package(
             dependencies: ["AppCore"]
         ),
         .target(
+            name: "RelayCloudKit",
+            dependencies: ["AppCore", "RelayCloudClient"]
+        ),
+        .target(
             name: "RelayCloudUI",
-            dependencies: ["AppCore", "RelayCloudClient"],
+            dependencies: ["AppCore", "RelayCloudClient", "RelayCloudKit"],
             path: "App/CloudUI"
         ),
         .target(
@@ -55,14 +60,15 @@ let package = Package(
         .executableTarget(name: "MCPAdapter", dependencies: ["AppCore"]),
         .executableTarget(
             name: "CodexRelayWorker",
-            dependencies: ["AppCore", "CodexAppServer", "RelayCloudClient"]
+            dependencies: ["AppCore", "CodexAppServer", "RelayCloudClient", "RelayCloudKit"]
         ),
         .executableTarget(
             name: "AgentRelayDesktop",
-            dependencies: ["MacAppSupport", "RelayCloudClient"]
+            dependencies: ["MacAppSupport", "RelayCloudClient", "RelayCloudKit"]
         ),
         .testTarget(name: "AppCoreTests", dependencies: ["AppCore"]),
         .testTarget(name: "RelayCloudClientTests", dependencies: ["RelayCloudClient"]),
+        .testTarget(name: "RelayCloudKitTests", dependencies: ["RelayCloudKit"]),
         .testTarget(name: "RelayCloudUITests", dependencies: ["RelayCloudUI"]),
         .testTarget(name: "CodexAppServerTests", dependencies: ["CodexAppServer"]),
         .testTarget(

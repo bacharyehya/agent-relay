@@ -17,7 +17,7 @@ enum WorkerConfigurationError: LocalizedError, Equatable {
         case let .invalidPollInterval(value):
             "AGENT_RELAY_POLL_INTERVAL_MS must be an integer from 100 through 60000, not \(value)."
         case let .invalidTransport(value):
-            "AGENT_RELAY_TRANSPORT must be local or cloud, not \(value)."
+            "AGENT_RELAY_TRANSPORT must be local, cloudkit, or cloud, not \(value)."
         case let .invalidCloudURL(value):
             "AGENT_RELAY_CLOUD_URL must be a valid HTTPS URL, not \(value)."
         case .missingCloudTokenFile:
@@ -32,6 +32,7 @@ enum WorkerConfigurationError: LocalizedError, Equatable {
 
 enum RelayWorkerTransport: String, Equatable, Sendable {
     case local
+    case cloudKit = "cloudkit"
     case cloud
 }
 
@@ -42,7 +43,7 @@ struct WorkerConfiguration: Equatable, Sendable {
 
     static func defaultPollIntervalMilliseconds(for transport: RelayWorkerTransport) -> Int {
         switch transport {
-        case .local:
+        case .local, .cloudKit:
             defaultPollIntervalMilliseconds
         case .cloud:
             defaultCloudPollIntervalMilliseconds
@@ -127,7 +128,7 @@ struct WorkerConfiguration: Equatable, Sendable {
             cloudToken = token
             coreAuthToken = ""
             actorCredential = ""
-        } else {
+        } else if transport == .local {
             cloudServiceURL = nil
             cloudToken = nil
             coreAuthToken = try AppRuntimeConfiguration.loadOrCreateAuthToken(
@@ -139,6 +140,11 @@ struct WorkerConfiguration: Equatable, Sendable {
                 environment: environment,
                 supportDirectory: supportDirectory
             )
+        } else {
+            cloudServiceURL = nil
+            cloudToken = nil
+            coreAuthToken = ""
+            actorCredential = ""
         }
         return WorkerConfiguration(
             actorID: actorID,

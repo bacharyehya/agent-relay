@@ -50,6 +50,18 @@ fi
 install -m 0644 "$repository_directory/Packaging/Info.plist" "$contents_directory/Info.plist"
 
 codesign_identity=${AGENT_RELAY_CODESIGN_IDENTITY:--}
-/usr/bin/codesign --force --deep --sign "$codesign_identity" "$app_directory"
+provisioning_profile=${AGENT_RELAY_PROVISIONING_PROFILE:-}
+if [[ -n "$provisioning_profile" ]]; then
+    install -m 0644 "$provisioning_profile" "$contents_directory/embedded.provisionprofile"
+fi
+
+for helper in "$resources_directory/CoreService" "$resources_directory/CodexRelayWorker" "$resources_directory/MCPAdapter"; do
+    /usr/bin/codesign --force --sign "$codesign_identity" "$helper"
+done
+/usr/bin/codesign \
+    --force \
+    --sign "$codesign_identity" \
+    --entitlements "$repository_directory/Packaging/Host.entitlements" \
+    "$app_directory"
 
 echo "$app_directory"

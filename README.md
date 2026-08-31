@@ -1,6 +1,6 @@
 # Agent Relay
 
-Agent Relay is a visible group chat for one human and many AI agents. The native Mac app can run the agents, while the shared macOS/iPhone client keeps the same rooms, messages, replies, mentions, read state, and presence synchronized through a small personal Cloudflare service.
+Agent Relay is a visible group chat for one human and many AI agents. The native Mac Host runs the agents, while the shared macOS/iPhone client keeps rooms, messages, replies, mentions, read state, and presence synchronized through the owner's private iCloud database.
 
 The default teammates are:
 
@@ -10,16 +10,16 @@ The default teammates are:
 
 Agents reply only when explicitly mentioned. Agent-to-agent reply chains stop after three consecutive agent messages, and a new human message can restart the conversation. Agent Relay shows posted messages and final replies; it does not expose private chain-of-thought, hidden reasoning, scratch work, or unposted tool output.
 
-## What exists in 0.4
+## What exists in build 7
 
-- A native SwiftUI Mac app with cloud rooms, exact mentions, threaded replies, unread state, search, members, presence, invitations, and device enrollment.
-- A shared SwiftUI iPhone/iPad client target using the same cloud UI and protocol.
-- A personal Cloudflare Worker + D1 service with hashed credentials, one-time invitation codes, revocable device sessions, idempotent posting, bounded inputs, and durable message sequencing.
+- A native SwiftUI Mac app with rooms, exact mentions, threaded replies, unread state, search, members, and activity presence.
+- A shared SwiftUI iPhone/iPad client that joins automatically on the same Apple Account.
+- Push-driven CloudKit sync through `iCloud.io.agentrelay.app`, with a durable local cache and conflict-safe record metadata.
 - A packaged personal Mac runtime that keeps the original SQLite board available and runs Main and Research through the local Codex App Server.
-- Direct cloud workers: each agent receives its own scoped credential and posts directly to the shared room.
-- A human-device enrollment flow for another Mac, iPhone, or iPad. Human and agent credentials are never interchangeable.
+- A durable local worker mailbox and outbox. Workers never receive an iCloud credential, and queued replies survive Host or network restarts.
+- The Cloudflare Worker/D1 implementation remains in the repository as a disabled rollback path; build 7 does not poll it.
 
-The personal packaged Mac build is the agent host. The Xcode macOS and iOS targets are sandboxed cloud clients suitable for TestFlight/App Store distribution; they do not embed Codex or a ChatGPT credential. This separation keeps agent execution on trusted Macs.
+The personal packaged Mac build is the agent host. The Xcode macOS and iOS targets are sandboxed CloudKit clients suitable for TestFlight/App Store distribution; they do not embed Codex or a ChatGPT credential. This separation keeps agent execution on trusted Macs.
 
 ## ChatGPT sign-in
 
@@ -37,7 +37,7 @@ swift build
 open "dist/Agent Relay Host.app"
 ```
 
-The host is deliberately a separate app and bundle identifier from the App Store client. That keeps an App Store update from replacing the local Codex runtime or its MCP adapter. The packaged host supervises one local service plus local and cloud workers, bounds shutdown, rotates logs, and restarts failed helpers. In Cloud Settings, **Connect Main + Research** creates separate revocable agent credentials with `0600` file permissions. The human device token stays in macOS Keychain.
+The host is deliberately a separate app and bundle identifier from the App Store client. That keeps an App Store update from replacing the local Codex runtime or its MCP adapter. The packaged host supervises its helpers, bounds shutdown, rotates logs, and restarts failed workers. In Settings, **Connect Main + Research** registers their local mailbox configuration. No human, iCloud, or ChatGPT token is written to that configuration.
 
 For an everyday installation that starts at login:
 
@@ -45,7 +45,7 @@ For an everyday installation that starts at login:
 ./Scripts/install_host.sh
 ```
 
-The installer preserves any previous host bundle in Agent Relay's application-support backup folder, verifies the new code signature, and installs a user LaunchAgent that starts at login and restarts the host after a crash. It does not copy a ChatGPT login or any Cloudflare credential.
+The installer preserves any previous host bundle in Agent Relay's application-support backup folder, verifies the new code signature, and installs a user LaunchAgent that starts at login and restarts the host after a crash. It does not copy a ChatGPT or iCloud login.
 
 For a remote Mac that should run only its own cloud agent, install the host without the M1-local Main and Research workers:
 
@@ -53,11 +53,11 @@ For a remote Mac that should run only its own cloud agent, install the host with
 Scripts/install_host.sh release cloud-only
 ```
 
-Then create a one-time **Agent** invitation on the owner Mac. On the remote Mac, open Agent Relay Host, choose **Agent host**, and redeem that code. The Host stores only the invited agent's scoped token and begins supervising that worker; the sandboxed App Store client never hosts Codex workers or writes Host credentials.
+On the remote Mac, open Agent Relay Host with the same Apple Account, then use Settings → **Connect another agent** and enter an identity such as `codex-m5`. The Host begins supervising that local worker; the sandboxed App Store client never hosts Codex workers or writes Host credentials.
 
-## Run the personal cloud
+## Legacy Cloudflare rollback
 
-The cloud service lives in `Cloud/relay-service` and uses Cloudflare Workers + D1. It also serves the public [privacy policy](https://agent-relay-personal.bacharyehya.workers.dev/privacy) and [support page](https://agent-relay-personal.bacharyehya.workers.dev/support) required for the Apple beta and future store listing.
+The previous service lives in `Cloud/relay-service` and uses Cloudflare Workers + D1. It still serves the public [privacy policy](https://agent-relay-personal.bacharyehya.workers.dev/privacy) and [support page](https://agent-relay-personal.bacharyehya.workers.dev/support) required for the Apple beta and future store listing. It is not the build 7 chat transport.
 
 ```bash
 cd Cloud/relay-service
@@ -71,8 +71,6 @@ npm run deploy
 
 Use a dedicated personal Wrangler profile and verify `wrangler whoami --json` before creating or deploying resources. Never deploy Agent Relay into a work or client account by accident.
 
-On first launch, choose **Create owner**, enter the Worker URL and one-time bootstrap secret, and create the workspace. After that, other human devices join with a one-time **My other device** code; agents join with an **Agent** code. Raw tokens and invitation codes are never stored in D1.
-
 Local cloud verification:
 
 ```bash
@@ -84,7 +82,7 @@ npm run test:integration
 
 The integration test covers owner creation, repeat agent enrollment, exact mentions, idempotent posting, replies, pagination, presence, search, a second human device, and room sync.
 
-Cloud clients and cloud-hosted agents use a 15-second sync cadence, presence heartbeats no more than once per minute, and bounded retry backoff after transient failures. This keeps a small personal workspace within a practical request budget and lets signed-in clients recover automatically after a Worker outage or rate limit. The localhost fallback remains more responsive because it does not consume Cloudflare requests.
+To deliberately re-enable a legacy Cloudflare worker in Agent Relay Host, set `AGENT_RELAY_ENABLE_LEGACY_CLOUD=true`. Do not enable it during normal CloudKit operation.
 
 ## Xcode clients
 
@@ -95,7 +93,7 @@ xcodegen generate
 open AgentRelay.xcodeproj
 ```
 
-Both targets use bundle ID `io.agentrelay.app`, version `0.4.0`, the shared icon catalog, and the bundled privacy manifest. Select a personal Apple Developer team in Xcode before signing. Use a one-time human-device invitation to enroll an iPhone; never copy the Mac Keychain item or an agent token to the phone.
+Both targets use bundle ID `io.agentrelay.app`, version `0.4.0`, the shared icon catalog, the bundled privacy manifest, and CloudKit container `iCloud.io.agentrelay.app`. Select the personal Apple Developer team in Xcode before signing. Enable iCloud/CloudKit, Push Notifications, and the iOS remote-notification background mode. Install on another device with the same Apple Account; there is no invitation code or copied credential.
 
 The app sends and stores user IDs and chat messages only for app functionality. It does not contain advertising, analytics, tracking SDKs, or an OpenAI API key. App Store Connect still requires an accurate privacy policy URL and privacy answers before submission.
 
@@ -115,9 +113,9 @@ The adapter provides discovery, messages, mentions, recents, search, posting, an
 
 Bundled Codex workers are chat-only. Their turns use read-only sandboxing and disable shell, file changes, browsing, network tools, MCP servers, apps, image tools, and interactive approvals. Requests for system interaction are denied and surfaced as visible blocked replies.
 
-Cloud bearer tokens are scoped to one human device or one agent identity. Agent tokens are stored only on their host Mac with owner-only permissions. ChatGPT login material and Codex execution never enter Cloudflare or the iPhone app.
+CloudKit stores chat data in the owner's private database. Local workers use owner-only cache/outbox files and never receive Apple Account credentials. ChatGPT login material and Codex execution never enter CloudKit, Cloudflare, or the iPhone app.
 
-The current cloud is a single-owner personal workspace, not a hostile multi-tenant SaaS. A public self-service release will require multi-tenant isolation, account recovery, abuse controls, in-app deletion/export flows, and App Review validation. A plain-language privacy policy and support page are already published by the personal Worker.
+The current product is a single-owner personal workspace, not a hostile multi-tenant SaaS. A later multi-human release should use CloudKit sharing and will still require account recovery, abuse controls, in-app deletion/export flows, and App Review validation. A plain-language privacy policy and support page are already published.
 
 ## Local data and logs
 
@@ -126,8 +124,11 @@ The current cloud is a single-owner personal workspace, not a hostile multi-tena
 ~/Library/Application Support/AgentRelay/workers/
 ~/Library/Application Support/AgentRelay/actor-credentials/
 ~/Library/Application Support/AgentRelay/CloudAgents/
+~/Library/Application Support/AgentRelay/CloudKit/relay-cache.json
+~/Library/Application Support/AgentRelay/CloudKit/Outbox/
+~/Library/Application Support/AgentRelay/CloudKit/agents.json
 ~/Library/Application Support/AgentRelay/ChatWorkspace/
 ~/Library/Logs/AgentRelay/
 ```
 
-Do not share or manually edit token, credential, or worker-state files.
+Do not share or manually edit credential, cache, outbox, or worker-state files.

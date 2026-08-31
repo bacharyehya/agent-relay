@@ -2,27 +2,27 @@ import AppCore
 import Foundation
 import Observation
 import RelayCloudClient
+import RelayCloudKit
 
 @MainActor
 @Observable
 public final class RelayCloudModel {
-    static let syncIntervalSeconds = 15
-    static let presenceIntervalSeconds = 60
-    static let maximumSyncRetrySeconds = 60
+    static let localOutboxScanIntervalSeconds = 1
+    static let usesPushDrivenCloudSync = true
 
-    private enum AgentHostEnrollmentError: LocalizedError {
+    private enum AgentHostError: LocalizedError {
         case unavailable
-        case humanInvitation
         case missingRoom
+        case cachedReadOnly
 
         var errorDescription: String? {
             switch self {
             case .unavailable:
                 "Install and open Agent Relay Host to connect a Codex agent on this Mac."
-            case .humanInvitation:
-                "That code is for a human device. Create an Agent invitation instead."
             case .missingRoom:
-                "The invitation did not include a room for the agent to watch."
+                "General has not finished syncing yet. Try again in a moment."
+            case .cachedReadOnly:
+                "Cached history is read-only until Agent Relay reconnects to iCloud."
             }
         }
     }
@@ -41,7 +41,6 @@ public final class RelayCloudModel {
 
     public var phase: Phase = .checking
     public var connectionState: ConnectionState = .connecting
-    public var storedSession: RelayStoredSession?
     public var workspace: RelayWorkspace?
     public var currentActor: RelayCloudActor?
     public var actors: [RelayCloudActor] = []
@@ -53,203 +52,89 @@ public final class RelayCloudModel {
     public var errorMessage: String?
     public var isWorking = false
     public var searchResults: [RelayCloudMessage] = []
-    public var activeInvitation: RelayInvitation?
     public var localAgentSetupMessage: String?
     public var localAgentsInstalled = false
     public var localAgentIDs: [String] = []
-    public var agentHostSetupMessage: String?
+    public var canWrite = false
     public let allowsLocalAgentHosting: Bool
+    public let deviceName: String
 
-    private let store: RelaySessionStore
-    private var api: RelayCloudAPI?
-    private var cursor = 0
-    private var syncTask: Task<Void, Never>?
-    private var lastPresenceUpdateAt: Date?
+    private var database: RelayCloudKitDatabase?
+    private var snapshotTask: Task<Void, Never>?
+    private var outboxTask: Task<Void, Never>?
 
-    public init(
-        store: RelaySessionStore = .live,
-        allowsLocalAgentHosting: Bool = false
-    ) {
-        self.store = store
+    public init(allowsLocalAgentHosting: Bool = false) {
         self.allowsLocalAgentHosting = allowsLocalAgentHosting
+        self.deviceName = ProcessInfo.processInfo.hostName
     }
 
     public func restore() async {
         guard phase == .checking else { return }
+        connectionState = .connecting
         do {
-            guard let saved = try store.load() else {
+            let database = try RelayCloudKitDatabase()
+            self.database = database
+            observe(database)
+            try await database.start(deviceName: deviceName)
+            await importLegacyLocalMessagesIfNeeded(into: database)
+            merge(await database.snapshot())
+            phase = .signedIn
+            connectionState = .connected
+            canWrite = true
+            errorMessage = nil
+            refreshLocalAgentInstallationState()
+            startLocalOutboxMonitor()
+        } catch {
+            if let database = self.database,
+               await database.hasCachedWorkspace(),
+               RelayCloudKitFailurePolicy.allowsCachedMode(for: error)
+            {
+                merge(await database.snapshot())
+                phase = .signedIn
+                connectionState = .offline
+                canWrite = false
+                errorMessage = error.localizedDescription
+                refreshLocalAgentInstallationState()
+            } else {
+                stopBackgroundWork()
+                self.database = nil
                 phase = .signedOut
                 connectionState = .offline
-                return
+                canWrite = false
+                errorMessage = error.localizedDescription
             }
-            let api = try RelayCloudAPI(baseURL: saved.session.serverURL, token: saved.token)
-            self.api = api
-            do {
-                let identity = try await api.me()
-                let refreshedSession = RelayStoredSession(
-                    serverURL: saved.session.serverURL,
-                    workspace: identity.workspace,
-                    actor: identity.actor,
-                    deviceID: identity.device.id,
-                    deviceName: identity.device.name ?? identity.device.deviceName ?? saved.session.deviceName
-                )
-                storedSession = refreshedSession
-                workspace = identity.workspace
-                currentActor = identity.actor
-                phase = .signedIn
-                connectionState = .connected
-                try? store.save(session: refreshedSession, token: saved.token)
-                await syncOnce()
-                refreshLocalAgentInstallationState()
-                startSyncLoop()
-            } catch {
-                if Self.isAuthenticationFailure(error) {
-                    self.api = nil
-                    phase = .signedOut
-                    connectionState = .offline
-                    errorMessage = error.localizedDescription
-                } else {
-                    storedSession = saved.session
-                    workspace = saved.session.workspace
-                    currentActor = saved.session.actor
-                    phase = .signedIn
-                    connectionState = .offline
-                    errorMessage = "Relay is temporarily unavailable. Your session is safe and will reconnect automatically."
-                    refreshLocalAgentInstallationState()
-                    startSyncLoop()
-                }
-            }
-        } catch {
-            api = nil
-            phase = .signedOut
-            connectionState = .offline
-            errorMessage = error.localizedDescription
         }
     }
 
-    public func join(serverURL: String, code: String, deviceName: String) async {
-        await performEnrollment(serverURL: serverURL, deviceName: deviceName) { api in
-            try await api.enroll(code: code, deviceName: deviceName)
-        }
-    }
-
-    public func joinAgentHost(serverURL: String, code: String, deviceName: String) async {
-        isWorking = true
-        connectionState = .connecting
-        defer { isWorking = false }
-        do {
-            guard allowsLocalAgentHosting else {
-                throw AgentHostEnrollmentError.unavailable
-            }
-            guard let url = Self.normalizedServerURL(serverURL) else {
-                throw RelayCloudError.invalidServerURL
-            }
-            if let existing = try RelayCloudAgentInstaller.load(), existing.serverURL != url {
-                throw RelayCloudAgentInstallerError.differentRelayAlreadyConfigured
-            }
-            let unsignedAPI = try RelayCloudAPI(baseURL: url)
-            _ = try await unsignedAPI.health()
-            let envelope = try await unsignedAPI.enroll(code: code, deviceName: deviceName)
-            guard envelope.actor.type == .agent else {
-                throw AgentHostEnrollmentError.humanInvitation
-            }
-            guard let room = envelope.room else {
-                throw AgentHostEnrollmentError.missingRoom
-            }
-            _ = try RelayCloudAgentInstaller.install(
-                serverURL: url,
-                roomID: room.id,
-                actorID: envelope.actor.id,
-                token: envelope.token
-            )
-            UserDefaults.standard.set(url.absoluteString, forKey: "AgentRelay.Cloud.LastServerURL")
-            refreshLocalAgentInstallationState()
-            agentHostSetupMessage = "@\(envelope.actor.id) is connected on this Mac. The Host will keep it running."
-            connectionState = .connected
-            errorMessage = nil
-        } catch {
-            connectionState = .offline
-            agentHostSetupMessage = nil
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    public func createOwner(
-        serverURL: String,
-        bootstrapKey: String,
-        workspaceName: String,
-        displayName: String,
-        deviceName: String
-    ) async {
-        await performEnrollment(serverURL: serverURL, deviceName: deviceName) { api in
-            try await api.bootstrap(
-                key: bootstrapKey,
-                workspaceName: workspaceName,
-                actorID: "bash",
-                displayName: displayName,
-                deviceName: deviceName
-            )
-        }
+    public func connectToICloud() async {
+        phase = .checking
+        errorMessage = nil
+        await restore()
     }
 
     public func syncOnce() async {
-        guard let api, phase == .signedIn else { return }
+        guard let database, phase == .signedIn else { return }
+        connectionState = .connecting
         do {
-            var hasMore = true
-            while hasMore {
-                let snapshot = try await api.sync(after: cursor)
-                merge(snapshot)
-                cursor = max(cursor, snapshot.nextCursor)
-                hasMore = snapshot.hasMore
-            }
-            if let storedSession {
-                let now = Date()
-                let shouldUpdatePresence = connectionState != .connected
-                    || lastPresenceUpdateAt.map { now.timeIntervalSince($0) >= Double(Self.presenceIntervalSeconds) } != false
-                if shouldUpdatePresence,
-                   (try? await api.updatePresence(state: "online", deviceName: storedSession.deviceName)) != nil
-                {
-                    lastPresenceUpdateAt = now
-                }
-            }
+            try await database.synchronize()
+            merge(await database.snapshot())
             connectionState = .connected
+            canWrite = true
             errorMessage = nil
+            startLocalOutboxMonitor()
         } catch {
-            connectionState = .offline
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    public func startSyncLoop() {
-        guard syncTask == nil else { return }
-        syncTask = Task { [weak self] in
-            var consecutiveFailures = self?.connectionState == .offline ? 1 : 0
-            while !Task.isCancelled {
-                do {
-                    let delay = Self.syncDelaySeconds(consecutiveFailures: consecutiveFailures)
-                    try await Task.sleep(for: .seconds(delay))
-                } catch {
-                    break
-                }
-                guard let self else { break }
-                await self.syncOnce()
-                if self.connectionState == .connected {
-                    consecutiveFailures = 0
-                } else {
-                    consecutiveFailures += 1
-                }
+            if RelayCloudKitFailurePolicy.allowsCachedMode(for: error) {
+                connectionState = .offline
+                errorMessage = error.localizedDescription
+            } else {
+                stopBackgroundWork()
+                self.database = nil
+                phase = .signedOut
+                connectionState = .offline
+                canWrite = false
+                errorMessage = error.localizedDescription
             }
         }
-    }
-
-    static func syncDelaySeconds(consecutiveFailures: Int) -> Int {
-        let exponent = min(max(consecutiveFailures - 1, 0), 2)
-        return min(maximumSyncRetrySeconds, syncIntervalSeconds * (1 << exponent))
-    }
-
-    public func stopSyncLoop() {
-        syncTask?.cancel()
-        syncTask = nil
     }
 
     public func send(
@@ -257,28 +142,29 @@ public final class RelayCloudModel {
         roomID: String,
         replyToMessageID: String? = nil
     ) async -> Bool {
-        guard let api else { return false }
+        guard let database, canWrite else {
+            errorMessage = AgentHostError.cachedReadOnly.localizedDescription
+            return false
+        }
         let trimmedBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedBody.isEmpty else { return false }
         let mentions = actors.compactMap { actor in
-            trimmedBody.range(of: "@\(actor.id)", options: [.caseInsensitive, .diacriticInsensitive]) == nil
-                ? nil
-                : actor.id
+            trimmedBody.range(
+                of: "@\(actor.id)",
+                options: [.caseInsensitive, .diacriticInsensitive]
+            ) == nil ? nil : actor.id
         }
         isWorking = true
         defer { isWorking = false }
         do {
-            let message = try await api.postMessage(
+            let message = try await database.postMessage(
                 roomID: roomID,
-                message: RelayPostMessage(
-                    body: trimmedBody,
-                    replyToMessageID: replyToMessageID,
-                    mentionedActorIDs: mentions
-                ),
-                idempotencyKey: UUID().uuidString.lowercased()
+                actorID: currentActor?.id ?? RelayCloudKitDatabase.humanActorID,
+                body: trimmedBody,
+                replyToMessageID: replyToMessageID,
+                mentionedActorIDs: mentions
             )
             merge(messages: [message])
-            cursor = max(cursor, message.sequence)
             connectionState = .connected
             errorMessage = nil
             return true
@@ -290,20 +176,32 @@ public final class RelayCloudModel {
     }
 
     public func markSelectedRoomRead() async {
-        guard let api, let roomID = selectedRoomID,
+        guard canWrite,
+              let database,
+              let roomID = selectedRoomID,
               let sequence = messagesByRoom[roomID]?.last?.sequence
         else { return }
-        if let receipt = try? await api.markRead(roomID: roomID, sequence: sequence) {
-            readReceipts[roomID] = max(readReceipts[roomID] ?? 0, receipt.lastReadSequence)
+        do {
+            try await database.markRead(
+                roomID: roomID,
+                actorID: currentActor?.id ?? RelayCloudKitDatabase.humanActorID,
+                sequence: sequence
+            )
+            readReceipts[roomID] = max(readReceipts[roomID] ?? 0, sequence)
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 
     public func createRoom(name: String, topic: String) async -> Bool {
-        guard let api else { return false }
+        guard let database, canWrite else {
+            errorMessage = AgentHostError.cachedReadOnly.localizedDescription
+            return false
+        }
         isWorking = true
         defer { isWorking = false }
         do {
-            let room = try await api.createRoom(name: name, topic: topic)
+            let room = try await database.createRoom(name: name, topic: topic)
             rooms.removeAll { $0.id == room.id }
             rooms.insert(room, at: 0)
             selectedRoomID = room.id
@@ -315,110 +213,84 @@ public final class RelayCloudModel {
         }
     }
 
-    public func createAgentInvitation(actorID: String, displayName: String) async {
-        guard let api else { return }
-        isWorking = true
-        defer { isWorking = false }
-        do {
-            activeInvitation = try await api.createAgentInvitation(actorID: actorID, displayName: displayName)
-            errorMessage = nil
-        } catch {
-            errorMessage = error.localizedDescription
+    public func addAgent(actorID: String, displayName: String) async -> Bool {
+        guard let database, canWrite else {
+            errorMessage = AgentHostError.cachedReadOnly.localizedDescription
+            return false
         }
-    }
-
-    public func createHumanDeviceInvitation() async {
-        guard let api else { return }
+        let id = actorID.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let name = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !id.isEmpty, !name.isEmpty else { return false }
         isWorking = true
         defer { isWorking = false }
         do {
-            activeInvitation = try await api.createHumanDeviceInvitation()
+            let actor = try await database.addAgent(actorID: id, displayName: name)
+            actors.removeAll { $0.id == actor.id }
+            actors.append(actor)
+            actors.sort { $0.id < $1.id }
             errorMessage = nil
+            return true
         } catch {
             errorMessage = error.localizedDescription
+            return false
         }
     }
 
     public func installLocalMacAgents() async {
-        guard allowsLocalAgentHosting else {
-            errorMessage = AgentHostEnrollmentError.unavailable.localizedDescription
-            return
+        for profile in [RelayAgentProfile.main, RelayAgentProfile.research] {
+            guard await installLocalAgent(actorID: profile.id, displayName: profile.displayName) else {
+                return
+            }
         }
-        guard let api,
-              let storedSession,
-              let roomID = rooms.first(where: { $0.name == "general" })?.id
-        else {
-            localAgentSetupMessage = "Open General and wait for Relay to finish syncing, then try again."
-            return
+        localAgentSetupMessage = "Main and Research are connected through this Mac."
+    }
+
+    @discardableResult
+    public func installLocalAgent(actorID: String, displayName: String) async -> Bool {
+        guard allowsLocalAgentHosting else {
+            errorMessage = AgentHostError.unavailable.localizedDescription
+            return false
+        }
+        guard canWrite else {
+            errorMessage = AgentHostError.cachedReadOnly.localizedDescription
+            return false
+        }
+        guard let roomID = rooms.first(where: { $0.name == "general" })?.id else {
+            errorMessage = AgentHostError.missingRoom.localizedDescription
+            return false
         }
         isWorking = true
         defer { isWorking = false }
         do {
-            let unsignedAPI = try RelayCloudAPI(baseURL: storedSession.serverURL)
-            let agents = [
-                (RelayAgentProfile.main.id, RelayAgentProfile.main.displayName),
-                (RelayAgentProfile.research.id, RelayAgentProfile.research.displayName),
-            ]
-            for (actorID, displayName) in agents {
-                let invitation = try await api.createAgentInvitation(
-                    actorID: actorID,
-                    displayName: displayName
-                )
-                let enrollment = try await unsignedAPI.enroll(
-                    code: invitation.code,
-                    deviceName: "\(ProcessInfo.processInfo.hostName) · \(displayName)"
-                )
-                _ = try RelayCloudAgentInstaller.install(
-                    serverURL: storedSession.serverURL,
-                    roomID: roomID,
-                    actorID: actorID,
-                    token: enrollment.token
-                )
+            _ = try RelayCloudKitAgentInstaller.install(roomID: roomID, actorID: actorID)
+            if let database {
+                _ = try await database.addAgent(actorID: actorID, displayName: displayName)
             }
-            localAgentsInstalled = true
-            localAgentSetupMessage = "Main and Research are connected on this Mac."
+            refreshLocalAgentInstallationState()
+            localAgentSetupMessage = "@\(actorID) is connected through this Mac."
             errorMessage = nil
-            await syncOnce()
+            return true
         } catch {
             localAgentSetupMessage = nil
             errorMessage = error.localizedDescription
+            return false
         }
     }
 
     public func search(_ query: String) async {
-        guard let api else { return }
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             searchResults = []
             return
         }
-        do {
-            searchResults = try await api.search(trimmed)
-            errorMessage = nil
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    public func signOut() {
-        stopSyncLoop()
-        try? store.clear()
-        api = nil
-        storedSession = nil
-        workspace = nil
-        currentActor = nil
-        actors = []
-        rooms = []
-        messagesByRoom = [:]
-        readReceipts = [:]
-        presence = []
-        selectedRoomID = nil
-        cursor = 0
-        lastPresenceUpdateAt = nil
-        phase = .signedOut
-        connectionState = .offline
-        localAgentSetupMessage = nil
-        localAgentsInstalled = false
+        searchResults = messagesByRoom.values
+            .flatMap { $0 }
+            .filter {
+                $0.body.localizedCaseInsensitiveContains(trimmed)
+                    || $0.actorID.localizedCaseInsensitiveContains(trimmed)
+            }
+            .sorted { $0.sequence > $1.sequence }
+        errorMessage = nil
     }
 
     public func messages(in roomID: String) -> [RelayCloudMessage] {
@@ -430,64 +302,77 @@ public final class RelayCloudModel {
     }
 
     public func unreadCount(roomID: String) -> Int {
-        let latest = messagesByRoom[roomID]?.last?.sequence ?? rooms.first { $0.id == roomID }?.latestSequence ?? 0
-        return max(0, latest - (readReceipts[roomID] ?? 0))
+        if let count = rooms.first(where: { $0.id == roomID })?.unreadCount {
+            return count
+        }
+        let receipt = readReceipts[roomID] ?? 0
+        return messagesByRoom[roomID]?.filter { $0.sequence > receipt }.count ?? 0
     }
 
     public func isOnline(actorID: String) -> Bool {
-        presence.contains { $0.actorID == actorID && $0.state == "online" }
+        presence.contains {
+            $0.actorID == actorID
+                && $0.state == "online"
+                && Date().timeIntervalSince($0.lastSeenAt) < 300
+        }
     }
 
-    private func performEnrollment(
-        serverURL: String,
-        deviceName: String,
-        operation: (RelayCloudAPI) async throws -> RelayEnrollmentEnvelope
-    ) async {
-        isWorking = true
-        connectionState = .connecting
-        defer { isWorking = false }
-        do {
-            guard let url = Self.normalizedServerURL(serverURL) else {
-                throw RelayCloudError.invalidServerURL
+    private func observe(_ database: RelayCloudKitDatabase) {
+        snapshotTask?.cancel()
+        snapshotTask = Task { [weak self] in
+            let stream = await database.snapshots()
+            for await snapshot in stream {
+                guard !Task.isCancelled else { break }
+                self?.merge(snapshot)
             }
-            let unsignedAPI = try RelayCloudAPI(baseURL: url)
-            _ = try await unsignedAPI.health()
-            let envelope = try await operation(unsignedAPI)
-            let authenticatedAPI = try RelayCloudAPI(baseURL: url, token: envelope.token)
-            let resolvedDeviceName = envelope.device.name ?? envelope.device.deviceName ?? deviceName
-            let saved = RelayStoredSession(
-                serverURL: url,
-                workspace: envelope.workspace,
-                actor: envelope.actor,
-                deviceID: envelope.device.id,
-                deviceName: resolvedDeviceName
-            )
-            try store.save(session: saved, token: envelope.token)
-            UserDefaults.standard.set(url.absoluteString, forKey: "AgentRelay.Cloud.LastServerURL")
-            api = authenticatedAPI
-            storedSession = saved
-            workspace = envelope.workspace
-            currentActor = envelope.actor
-            selectedRoomID = envelope.room?.id
-            phase = .signedIn
-            connectionState = .connected
-            errorMessage = nil
-            await syncOnce()
-            startSyncLoop()
-        } catch {
-            phase = .signedOut
-            connectionState = .offline
-            errorMessage = error.localizedDescription
         }
+    }
+
+    private func startLocalOutboxMonitor() {
+        guard allowsLocalAgentHosting, outboxTask == nil, let database else { return }
+        outboxTask = Task { [weak self] in
+            while !Task.isCancelled {
+                do {
+                    let count = try await database.drainOutbox()
+                    if count > 0 {
+                        self?.connectionState = .connected
+                        self?.errorMessage = nil
+                    }
+                    try await Task.sleep(for: .seconds(Self.localOutboxScanIntervalSeconds))
+                } catch is CancellationError {
+                    break
+                } catch {
+                    self?.connectionState = .offline
+                    self?.errorMessage = error.localizedDescription
+                    try? await Task.sleep(for: .seconds(5))
+                }
+            }
+        }
+    }
+
+    private func stopBackgroundWork() {
+        snapshotTask?.cancel()
+        snapshotTask = nil
+        outboxTask?.cancel()
+        outboxTask = nil
     }
 
     private func merge(_ snapshot: RelaySyncSnapshot) {
         workspace = snapshot.workspace
         actors = snapshot.actors
+        currentActor = snapshot.actors.first { $0.id == snapshot.currentActorID }
         rooms = snapshot.rooms.filter { !$0.isArchived }
-        readReceipts = Dictionary(uniqueKeysWithValues: snapshot.readReceipts.map { ($0.roomID, $0.lastReadSequence) })
+        readReceipts = Dictionary(
+            snapshot.readReceipts.map { ($0.roomID, $0.lastReadSequence) },
+            uniquingKeysWith: max
+        )
         presence = snapshot.presence
-        merge(messages: snapshot.messages)
+        messagesByRoom = Dictionary(grouping: snapshot.messages, by: \.roomID)
+            .mapValues { messages in
+                messages.sorted {
+                    $0.sequence == $1.sequence ? $0.id < $1.id : $0.sequence < $1.sequence
+                }
+            }
         if selectedRoomID == nil || !rooms.contains(where: { $0.id == selectedRoomID }) {
             selectedRoomID = rooms.first?.id
         }
@@ -498,41 +383,86 @@ public final class RelayCloudModel {
             var roomMessages = messagesByRoom[message.roomID] ?? []
             roomMessages.removeAll { $0.id == message.id }
             roomMessages.append(message)
-            roomMessages.sort { lhs, rhs in
-                lhs.sequence == rhs.sequence ? lhs.id < rhs.id : lhs.sequence < rhs.sequence
+            roomMessages.sort {
+                $0.sequence == $1.sequence ? $0.id < $1.id : $0.sequence < $1.sequence
             }
             messagesByRoom[message.roomID] = roomMessages
         }
     }
 
-    private static func normalizedServerURL(_ value: String) -> URL? {
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        let candidate = trimmed.contains("://") ? trimmed : "https://\(trimmed)"
-        guard var components = URLComponents(string: candidate), components.host != nil else { return nil }
-        components.path = components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        return components.url
-    }
-
-    private static func isAuthenticationFailure(_ error: Error) -> Bool {
-        guard let relayError = error as? RelayCloudError else { return false }
-        switch relayError {
-        case .missingCredential:
-            return true
-        case let .server(status, _):
-            return status == 401 || status == 403
-        case .invalidResponse, .invalidServerURL:
-            return false
-        }
-    }
-
     private func refreshLocalAgentInstallationState() {
-        let expected = Set([RelayAgentProfile.main.id, RelayAgentProfile.research.id])
-        let configured = (try? RelayCloudAgentInstaller.load())?.actorIDs ?? []
+        let configured = (try? RelayCloudKitAgentInstaller.load())?.actorIDs ?? []
         localAgentIDs = configured
+        let expected = Set([RelayAgentProfile.main.id, RelayAgentProfile.research.id])
         localAgentsInstalled = expected.isSubset(of: Set(configured))
         if localAgentsInstalled {
-            localAgentSetupMessage = "Main and Research are connected on this Mac."
+            localAgentSetupMessage = "Main and Research are connected through this Mac."
         }
+    }
+
+    private func importLegacyLocalMessagesIfNeeded(into database: RelayCloudKitDatabase) async {
+        guard allowsLocalAgentHosting,
+              await database.snapshot().messages.isEmpty,
+              let legacyMessages = try? await Self.fetchLegacyLocalMessages(),
+              !legacyMessages.isEmpty
+        else {
+            return
+        }
+        let cloudMessages = legacyMessages.enumerated().map { index, message in
+            RelayCloudMessage(
+                id: message.id,
+                sequence: message.sequence
+                    ?? Int((message.createdAt.timeIntervalSince1970 * 1_000_000).rounded(.down)) + index,
+                roomID: message.threadID,
+                threadID: message.threadID,
+                actorID: message.actorID,
+                body: message.body,
+                format: message.format,
+                replyToMessageID: message.replyToMessageID,
+                mentionedActorIDs: message.mentionedActorIDs,
+                createdAt: message.createdAt,
+                editedAt: nil
+            )
+        }
+        _ = try? await database.importMessages(cloudMessages)
+    }
+
+    private static func fetchLegacyLocalMessages() async throws -> [Message] {
+        let environment = ProcessInfo.processInfo.environment
+        let token = try AppRuntimeConfiguration.loadOrCreateAuthToken(environment: environment)
+        let baseURL = AppRuntimeConfiguration.coreServiceURL(environment: environment)
+        var messages: [Message] = []
+        var cursor: MessageCursor?
+
+        while messages.count < 5_000 {
+            var components = URLComponents(
+                url: baseURL.appending(path: "threads/thread-general/messages"),
+                resolvingAgainstBaseURL: false
+            )
+            var query = [URLQueryItem(name: "limit", value: "200")]
+            if let cursor {
+                query.append(URLQueryItem(
+                    name: "before_created_at",
+                    value: PreciseDateCodec.string(from: cursor.createdAt)
+                ))
+                query.append(URLQueryItem(name: "before_message_id", value: cursor.messageID))
+            }
+            components?.queryItems = query
+            guard let url = components?.url else { break }
+            var request = URLRequest(url: url)
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let response = response as? HTTPURLResponse,
+                  (200..<300).contains(response.statusCode)
+            else {
+                break
+            }
+            let page = try JSONDecoder().decode([Message].self, from: data)
+            guard !page.isEmpty else { break }
+            messages.insert(contentsOf: page, at: 0)
+            guard page.count == 200, let oldest = page.first else { break }
+            cursor = MessageCursor(message: oldest)
+        }
+        return messages
     }
 }

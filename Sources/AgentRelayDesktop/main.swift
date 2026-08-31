@@ -3,6 +3,7 @@ import Darwin
 import Foundation
 import MacAppSupport
 import RelayCloudClient
+import RelayCloudKit
 import SwiftUI
 
 @MainActor
@@ -51,21 +52,31 @@ private final class LocalRuntime {
         let localWorkersEnabled = !["0", "false", "no"].contains(
             ProcessInfo.processInfo.environment["AGENT_RELAY_ENABLE_LOCAL_AGENTS"]?.lowercased() ?? "true"
         )
-        var specs = localWorkersEnabled ? ["codex-main", "codex-research"].map { actorID in
+        var cloudKitActorIDs = Set(
+            localWorkersEnabled ? ["codex-main", "codex-research"] : []
+        )
+        if let configuration = try? RelayCloudKitAgentInstaller.load() {
+            cloudKitActorIDs.formUnion(configuration.actorIDs)
+        }
+        var specs = cloudKitActorIDs.sorted().map { actorID in
             HelperSpec(
-                key: "local-\(actorID)",
+                key: "cloudkit-\(actorID)",
                 executableName: "CodexRelayWorker",
                 environment: [
                     "AGENT_RELAY_ACTOR_ID": actorID,
+                    "AGENT_RELAY_TRANSPORT": "cloudkit",
                     "AGENT_RELAY_THREAD_ID": "thread-general",
-                    "AGENT_RELAY_POLL_INTERVAL_MS": "1000",
+                    "AGENT_RELAY_POLL_INTERVAL_MS": "1500",
                     "AGENT_RELAY_CODEX_CWD": chatWorkspace.path(percentEncoded: false),
                 ],
-                logName: actorID
+                logName: "cloudkit-\(actorID)"
             )
-        } : []
+        }
 
-        if let configuration = try? RelayCloudAgentInstaller.load() {
+        let legacyCloudEnabled = ["1", "true", "yes"].contains(
+            ProcessInfo.processInfo.environment["AGENT_RELAY_ENABLE_LEGACY_CLOUD"]?.lowercased() ?? "false"
+        )
+        if legacyCloudEnabled, let configuration = try? RelayCloudAgentInstaller.load() {
             for actorID in configuration.actorIDs {
                 guard let tokenURL = try? RelayCloudAgentInstaller.tokenFileURL(actorID: actorID) else {
                     continue
