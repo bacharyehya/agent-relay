@@ -45,7 +45,7 @@ For an everyday installation that starts at login:
 ./Scripts/install_host.sh
 ```
 
-The installer preserves any previous host bundle in Agent Relay's application-support backup folder, verifies the new code signature, and installs a user LaunchAgent. It does not copy a ChatGPT login or any Cloudflare credential.
+The installer preserves any previous host bundle in Agent Relay's application-support backup folder, verifies the new code signature, and installs a user LaunchAgent that starts at login and restarts the host after a crash. It does not copy a ChatGPT login or any Cloudflare credential.
 
 ## Run the personal cloud
 

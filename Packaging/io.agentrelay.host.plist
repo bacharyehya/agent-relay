@@ -6,11 +6,17 @@
     <string>io.agentrelay.host</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/bin/open</string>
-        <string>/Applications/Agent Relay Host.app</string>
+        <string>/Applications/Agent Relay Host.app/Contents/MacOS/AgentRelayDesktop</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
     <key>ProcessType</key>
     <string>Interactive</string>
     <key>StandardOutPath</key>

@@ -14,6 +14,37 @@ launch_domain="gui/$(id -u)"
 
 "$script_directory/package_app.sh" "$configuration"
 
+/bin/launchctl bootout "$launch_domain/io.agentrelay.host" 2>/dev/null || true
+host_pids=$(/usr/bin/pgrep -f '^/Applications/Agent Relay Host\.app/Contents/MacOS/AgentRelayDesktop$' || true)
+if [[ -n "$host_pids" ]]; then
+    /bin/kill -TERM ${(f)host_pids}
+    for attempt in {1..50}; do
+        if ! /usr/bin/pgrep -f '^/Applications/Agent Relay Host\.app/Contents/MacOS/AgentRelayDesktop$' >/dev/null; then
+            break
+        fi
+        /bin/sleep 0.1
+    done
+    lingering_pids=$(/usr/bin/pgrep -f '^/Applications/Agent Relay Host\.app/Contents/MacOS/AgentRelayDesktop$' || true)
+    if [[ -n "$lingering_pids" ]]; then
+        /bin/kill -KILL ${(f)lingering_pids}
+    fi
+fi
+
+helper_pids=$(/usr/bin/pgrep -f '^/Applications/Agent Relay Host\.app/Contents/Resources/(CoreService|CodexRelayWorker)$' || true)
+if [[ -n "$helper_pids" ]]; then
+    /bin/kill -TERM ${(f)helper_pids}
+    for attempt in {1..50}; do
+        if ! /usr/bin/pgrep -f '^/Applications/Agent Relay Host\.app/Contents/Resources/(CoreService|CodexRelayWorker)$' >/dev/null; then
+            break
+        fi
+        /bin/sleep 0.1
+    done
+    lingering_helper_pids=$(/usr/bin/pgrep -f '^/Applications/Agent Relay Host\.app/Contents/Resources/(CoreService|CodexRelayWorker)$' || true)
+    if [[ -n "$lingering_helper_pids" ]]; then
+        /bin/kill -KILL ${(f)lingering_helper_pids}
+    fi
+fi
+
 if [[ -d "$installed_app" ]]; then
     backup_directory="$HOME/Library/Application Support/Agent Relay/Backups"
     timestamp=$(date -u +%Y%m%dT%H%M%SZ)
@@ -27,7 +58,6 @@ fi
 mkdir -p "$launch_agents_directory"
 /usr/bin/plutil -lint "$launch_agent_template" >/dev/null
 /usr/bin/install -m 0644 "$launch_agent_template" "$launch_agent"
-/bin/launchctl bootout "$launch_domain/io.agentrelay.host" 2>/dev/null || true
 /bin/launchctl bootstrap "$launch_domain" "$launch_agent"
 
 echo "$installed_app"
