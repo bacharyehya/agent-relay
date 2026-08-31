@@ -46,7 +46,7 @@ final class AppModel {
 
     let client: any AppAPIClientProtocol
     var serviceState: ServiceState = .checking
-    var selection: SidebarSelection? = .inbox
+    var selection: SidebarSelection? = .projects
 
     init(client: any AppAPIClientProtocol) {
         self.client = client

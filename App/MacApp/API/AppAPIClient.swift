@@ -4,6 +4,7 @@ import AppCore
 enum AppAPIClientError: Error {
     case invalidResponse
     case httpStatus(Int, String)
+    case actorIdentityMismatch(expected: String, received: String)
 }
 
 extension AppAPIClientError: LocalizedError {
@@ -17,6 +18,8 @@ extension AppAPIClientError: LocalizedError {
                 return "The local core service responded with status \(statusCode)."
             }
             return "The local core service responded with status \(statusCode): \(trimmedBody)"
+        case let .actorIdentityMismatch(expected, received):
+            return "This app is bound to \(expected), not \(received)."
         }
     }
 }
@@ -46,8 +49,41 @@ struct AppSearchResult: Codable, Equatable, Identifiable, Sendable {
 
 struct AppThreadContext: Codable, Equatable, Sendable {
     let thread: AppCore.Thread
-    let messages: [Message]
+    var messages: [Message]
     var handoffs: [Handoff]
+}
+
+struct AppPostMessageRequest: Encodable, Equatable, Sendable {
+    let actorID: String
+    let body: String
+    let format: MessageFormat
+    let replyToMessageID: String?
+    let mentionedActorIDs: [String]
+    let idempotencyKey: String
+
+    init(
+        actorID: String,
+        body: String,
+        format: MessageFormat,
+        replyToMessageID: String?,
+        mentionedActorIDs: [String],
+        idempotencyKey: String = UUID().uuidString.lowercased()
+    ) {
+        self.actorID = actorID
+        self.body = body
+        self.format = format
+        self.replyToMessageID = replyToMessageID
+        self.mentionedActorIDs = mentionedActorIDs
+        self.idempotencyKey = idempotencyKey
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case actorID
+        case body
+        case format
+        case replyToMessageID
+        case mentionedActorIDs
+    }
 }
 
 struct AppCreateHandoffRequest: Codable, Sendable {
@@ -74,6 +110,8 @@ protocol AppAPIClientProtocol: Sendable {
     func fetchProjects() async throws -> [Project]
     func fetchProjectThreads(projectID: String) async throws -> [AppCore.Thread]
     func fetchThreadContext(threadID: String, mode: String) async throws -> AppThreadContext
+    func fetchThreadMessages(threadID: String, limit: Int, before: MessageCursor?) async throws -> [Message]
+    func postMessage(threadID: String, request: AppPostMessageRequest) async throws -> Message
     func createHandoff(_ request: AppCreateHandoffRequest) async throws -> Handoff
     func updateHandoff(id: String, status: HandoffStatus, resolution: String?) async throws -> Handoff
 }
@@ -81,15 +119,21 @@ protocol AppAPIClientProtocol: Sendable {
 struct AppAPIClient: AppAPIClientProtocol {
     let baseURL: URL
     let authToken: String
+    let actorID: String
+    let actorCredential: String
     let session: URLSession
 
     init(
         baseURL: URL,
         authToken: String,
+        actorID: String = "bash",
+        actorCredential: String,
         session: URLSession = .shared
     ) {
         self.baseURL = baseURL
         self.authToken = authToken
+        self.actorID = actorID
+        self.actorCredential = actorCredential
         self.session = session
     }
 
@@ -97,9 +141,15 @@ struct AppAPIClient: AppAPIClientProtocol {
         environment: [String: String] = ProcessInfo.processInfo.environment,
         session: URLSession = .shared
     ) throws -> AppAPIClient {
-        try AppAPIClient(
+        let actorID = "bash"
+        return try AppAPIClient(
             baseURL: AppRuntimeConfiguration.coreServiceURL(environment: environment),
             authToken: AppRuntimeConfiguration.loadOrCreateAuthToken(environment: environment),
+            actorID: actorID,
+            actorCredential: AppRuntimeConfiguration.loadOrCreateActorCredential(
+                actorID: actorID,
+                environment: environment
+            ),
             session: session
         )
     }
@@ -142,6 +192,39 @@ struct AppAPIClient: AppAPIClientProtocol {
         return try await decode(url: url, method: "GET")
     }
 
+    func fetchThreadMessages(threadID: String, limit: Int = 100, before: MessageCursor? = nil) async throws -> [Message] {
+        var components = URLComponents(
+            url: baseURL.appending(path: "threads/\(threadID)/messages"),
+            resolvingAgainstBaseURL: false
+        )
+        var queryItems = [URLQueryItem(name: "limit", value: String(limit))]
+        if let before {
+            queryItems.append(URLQueryItem(name: "before_created_at", value: Self.iso8601String(from: before.createdAt)))
+            queryItems.append(URLQueryItem(name: "before_message_id", value: before.messageID))
+        }
+        components?.queryItems = queryItems
+        guard let url = components?.url else {
+            throw AppAPIClientError.invalidResponse
+        }
+        return try await decode(url: url, method: "GET")
+    }
+
+    func postMessage(threadID: String, request: AppPostMessageRequest) async throws -> Message {
+        guard request.actorID == actorID else {
+            throw AppAPIClientError.actorIdentityMismatch(expected: actorID, received: request.actorID)
+        }
+        return try await send(
+            path: "threads/\(threadID)/messages",
+            method: "POST",
+            payload: request,
+            additionalHeaders: [
+                ActorCredential.actorHeader: actorID,
+                ActorCredential.credentialHeader: actorCredential,
+                "Idempotency-Key": request.idempotencyKey,
+            ]
+        )
+    }
+
     func createHandoff(_ request: AppCreateHandoffRequest) async throws -> Handoff {
         try await send(path: "handoffs", method: "POST", payload: request)
     }
@@ -163,16 +246,34 @@ struct AppAPIClient: AppAPIClientProtocol {
         return try makeDecoder().decode(T.self, from: data)
     }
 
-    private func send<T: Decodable, Body: Encodable>(path: String, method: String, payload: Body) async throws -> T {
+    private func send<T: Decodable, Body: Encodable>(
+        path: String,
+        method: String,
+        payload: Body,
+        additionalHeaders: [String: String] = [:]
+    ) async throws -> T {
         let body = try makeEncoder().encode(payload)
-        let data = try await perform(url: baseURL.appending(path: path), method: method, body: body)
+        let data = try await perform(
+            url: baseURL.appending(path: path),
+            method: method,
+            body: body,
+            additionalHeaders: additionalHeaders
+        )
         return try makeDecoder().decode(T.self, from: data)
     }
 
-    private func perform(url: URL, method: String, body: Data?) async throws -> Data {
+    private func perform(
+        url: URL,
+        method: String,
+        body: Data?,
+        additionalHeaders: [String: String] = [:]
+    ) async throws -> Data {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        for (name, value) in additionalHeaders {
+            request.setValue(value, forHTTPHeaderField: name)
+        }
         if let body {
             request.httpBody = body
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -201,5 +302,9 @@ struct AppAPIClient: AppAPIClientProtocol {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         return encoder
+    }
+
+    private static func iso8601String(from date: Date) -> String {
+        PreciseDateCodec.string(from: date)
     }
 }

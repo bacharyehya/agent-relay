@@ -49,15 +49,23 @@ private struct TestSystem {
         try ProjectRepository(databaseQueue).create(project)
         try ThreadRepository(databaseQueue).create(thread)
 
+        let actorCredentialStore = try ActorCredentialStore(
+            supportDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(
+                "agent-relay-integration-tests-\(UUID().uuidString)",
+                isDirectory: true
+            )
+        )
         let environment = AppEnvironment(
             projectRepository: ProjectRepository(databaseQueue),
             threadRepository: ThreadRepository(databaseQueue),
+            messageRepository: MessageRepository(databaseQueue),
             handoffRepository: HandoffRepository(databaseQueue),
             eventRepository: EventRepository(databaseQueue),
             inboxRepository: InboxRepository(databaseQueue),
             notificationRepository: NotificationRepository(databaseQueue),
             searchRepository: SearchRepository(databaseQueue),
-            authToken: AuthToken("test-token")
+            authToken: AuthToken("test-token"),
+            actorCredentialStore: actorCredentialStore
         )
         return TestSystem(app: CoreAPIApp.makeApplication(environment: environment))
     }

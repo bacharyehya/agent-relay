@@ -1,5 +1,49 @@
 import AppCore
 import Foundation
+import SwiftUI
+
+public struct AgentRelayRootView: View {
+    @State private var model: AppModel
+
+    @MainActor
+    public init() {
+        _model = State(initialValue: AppBootstrap.makeAppModel())
+    }
+
+    public var body: some View {
+        @Bindable var bindableModel = model
+
+        NavigationSplitView {
+            SidebarView(selection: $bindableModel.selection)
+        } detail: {
+            switch model.selection ?? .projects {
+            case .inbox:
+                InboxView(client: model.client)
+            case .recents:
+                RecentsView(client: model.client)
+            case .search:
+                SearchView(client: model.client)
+            case .projects:
+                ProjectsWorkspaceView(client: model.client)
+            case .agents:
+                AgentListView()
+            case .settings:
+                VStack(alignment: .leading, spacing: 16) {
+                    ServiceStatusView(state: model.serviceState)
+                    Text("Agent Relay keeps the board and its ChatGPT-backed agents on this Mac.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            }
+        }
+        .task {
+            await model.refresh()
+        }
+    }
+}
 
 enum AppBootstrap {
     @MainActor
@@ -40,6 +84,14 @@ private struct BootstrapFailureAppAPIClient: AppAPIClientProtocol {
     }
 
     func fetchThreadContext(threadID: String, mode: String) async throws -> AppThreadContext {
+        throw underlyingError
+    }
+
+    func fetchThreadMessages(threadID: String, limit: Int, before: MessageCursor?) async throws -> [Message] {
+        throw underlyingError
+    }
+
+    func postMessage(threadID: String, request: AppPostMessageRequest) async throws -> Message {
         throw underlyingError
     }
 

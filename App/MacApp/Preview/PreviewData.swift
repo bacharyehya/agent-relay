@@ -75,6 +75,23 @@ private struct PreviewAppAPIClient: AppAPIClientProtocol {
         )
     }
 
+    func fetchThreadMessages(threadID: String, limit: Int, before: MessageCursor?) async throws -> [Message] {
+        try await fetchThreadContext(threadID: threadID, mode: "recent").messages
+    }
+
+    func postMessage(threadID: String, request: AppPostMessageRequest) async throws -> Message {
+        var message = Message(
+            id: "message-preview-bash",
+            threadID: threadID,
+            actorID: request.actorID,
+            body: request.body,
+            format: request.format
+        )
+        message.replyToMessageID = request.replyToMessageID
+        message.mentionedActorIDs = request.mentionedActorIDs
+        return message
+    }
+
     func createHandoff(_ request: AppCreateHandoffRequest) async throws -> Handoff {
         Handoff(
             id: "handoff-preview-created",

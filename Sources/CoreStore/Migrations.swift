@@ -77,6 +77,36 @@ public enum AppMigrations {
             }
         }
 
+        migrator.registerMigration("v3_message_collaboration_metadata") { db in
+            try db.alter(table: "messages") { table in
+                table.add(column: "reply_to_message_id", .text)
+                    .references("messages", column: "id", onDelete: .setNull)
+                table.add(column: "mentioned_actor_ids", .text)
+                    .notNull()
+                    .defaults(to: "[]")
+            }
+
+            try db.create(
+                index: "messages_on_thread_created_id",
+                on: "messages",
+                columns: ["thread_id", "created_at", "id"]
+            )
+        }
+
+        migrator.registerMigration("v4_message_idempotency") { db in
+            try db.alter(table: "messages") { table in
+                table.add(column: "client_idempotency_key", .text)
+            }
+
+            try db.execute(
+                sql: """
+                CREATE UNIQUE INDEX messages_on_actor_idempotency_key
+                ON messages (thread_id, actor_id, client_idempotency_key)
+                WHERE client_idempotency_key IS NOT NULL
+                """
+            )
+        }
+
         return migrator
     }
 }

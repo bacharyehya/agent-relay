@@ -1,4 +1,5 @@
 import XCTest
+import GRDB
 
 final class DatabaseMigrationTests: XCTestCase {
     func test_migrator_creates_projects_threads_messages_handoffs_tables() throws {
@@ -9,5 +10,11 @@ final class DatabaseMigrationTests: XCTestCase {
         XCTAssertTrue(names.contains("threads"))
         XCTAssertTrue(names.contains("messages"))
         XCTAssertTrue(names.contains("handoffs"))
+
+        let messageColumns = try db.read { database in
+            try database.columns(in: "messages").map(\.name)
+        }
+        XCTAssertTrue(messageColumns.contains("reply_to_message_id"))
+        XCTAssertTrue(messageColumns.contains("mentioned_actor_ids"))
     }
 }

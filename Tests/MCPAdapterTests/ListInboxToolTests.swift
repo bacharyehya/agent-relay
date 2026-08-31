@@ -1,4 +1,5 @@
 import XCTest
+import Foundation
 @testable import AppCore
 @testable import MCPAdapter
 
@@ -16,6 +17,10 @@ final class ListInboxToolTests: XCTestCase {
 private struct StubCoreAPIClient: CoreAPIClientProtocol {
     let result: [Handoff]
 
+    func listProjects() async throws -> [Project] { [] }
+
+    func listThreads(projectID: String) async throws -> [AppCore.Thread] { [] }
+
     func listInbox(actorID: String) async throws -> [Handoff] {
         result
     }
@@ -26,6 +31,22 @@ private struct StubCoreAPIClient: CoreAPIClientProtocol {
 
     func getThread(threadID: String, mode: String) async throws -> ThreadContextPayload {
         ThreadContextPayload(thread: AppCore.Thread.example(id: threadID), messages: [], handoffs: [])
+    }
+
+    func getMessages(threadID: String, limit: Int, before: MessageCursor?) async throws -> [Message] {
+        []
+    }
+
+    func postMessage(threadID: String, request: CreateMessagePayload) async throws -> Message {
+        Message(
+            id: "message-stub",
+            threadID: threadID,
+            actorID: request.actorID,
+            body: request.body,
+            format: request.format,
+            replyToMessageID: request.replyToMessageID,
+            mentionedActorIDs: request.mentionedActorIDs
+        )
     }
 
     func createHandoff(_ request: CreateHandoffPayload) async throws -> Handoff {

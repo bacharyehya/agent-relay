@@ -29,12 +29,14 @@ struct ProjectDetailView: View {
                             await model.selectThread(thread)
                         }
                     }
+                    .frame(width: 180)
 
                     ThreadDetailView(
                         client: client,
                         threadID: model.selectedThreadID,
                         seedContext: model.threadContext
                     )
+                    .frame(minWidth: 480, maxWidth: .infinity)
                 }
             }
         }

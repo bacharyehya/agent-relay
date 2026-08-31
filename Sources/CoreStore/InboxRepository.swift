@@ -133,7 +133,8 @@ public struct InboxRepository {
             let messageRows = try Row.fetchAll(
                 db,
                 sql: """
-                SELECT id, thread_id, actor_id, body, format, created_at
+                SELECT id, thread_id, actor_id, body, format,
+                       reply_to_message_id, mentioned_actor_ids, created_at
                 FROM messages
                 WHERE thread_id = ?
                 ORDER BY created_at DESC
@@ -142,7 +143,7 @@ public struct InboxRepository {
                 arguments: [threadID, messageLimit]
             )
 
-            var messages = messageRows.map(Self.message(from:))
+            var messages = try messageRows.map(MessageRepository.message(from:))
             messages.reverse()
 
             let handoffRows = try Row.fetchAll(
@@ -172,14 +173,4 @@ public struct InboxRepository {
         }
     }
 
-    private static func message(from row: Row) -> Message {
-        Message(
-            id: row["id"],
-            threadID: row["thread_id"],
-            actorID: row["actor_id"],
-            body: row["body"],
-            format: MessageFormat(rawValue: row["format"]) ?? .markdown,
-            createdAt: row["created_at"]
-        )
-    }
 }

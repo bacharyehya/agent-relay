@@ -9,19 +9,27 @@ struct CoreServiceMain {
         let environmentVariables = ProcessInfo.processInfo.environment
         let databaseURL = try AppRuntimeConfiguration.databaseURL(environment: environmentVariables)
         let authToken = try AppRuntimeConfiguration.loadOrCreateAuthToken(environment: environmentVariables)
+        let actorCredentialStore = try AppRuntimeConfiguration.actorCredentialStore(
+            environment: environmentVariables
+        )
         let host = environmentVariables["AGENT_RELAY_CORE_HOST"] ?? AppRuntimeConfiguration.defaultCoreHost
         let port = Int(environmentVariables["AGENT_RELAY_CORE_PORT"] ?? "") ?? AppRuntimeConfiguration.defaultCorePort
 
-        let databaseQueue = try AppDatabase.makeDatabaseQueue(path: databaseURL.path())
+        let databaseQueue = try AppDatabase.makeDatabaseQueue(
+            path: databaseURL.path(percentEncoded: false)
+        )
+        try WorkspaceBootstrapper(databaseQueue).ensureDefaultWorkspace()
         let environment = AppEnvironment(
             projectRepository: ProjectRepository(databaseQueue),
             threadRepository: ThreadRepository(databaseQueue),
+            messageRepository: MessageRepository(databaseQueue),
             handoffRepository: HandoffRepository(databaseQueue),
             eventRepository: EventRepository(databaseQueue),
             inboxRepository: InboxRepository(databaseQueue),
             notificationRepository: NotificationRepository(databaseQueue),
             searchRepository: SearchRepository(databaseQueue),
-            authToken: AuthToken(authToken)
+            authToken: AuthToken(authToken),
+            actorCredentialStore: actorCredentialStore
         )
         let app = CoreAPIApp.makeApplication(
             environment: environment,

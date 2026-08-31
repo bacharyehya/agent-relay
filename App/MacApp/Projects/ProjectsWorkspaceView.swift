@@ -25,10 +25,12 @@ struct ProjectsWorkspaceView: View {
                         projects: model.projects,
                         selection: $bindableModel.selectedProjectID
                     )
+                    .frame(width: 230)
 
                     if let projectID = model.selectedProjectID {
                         ProjectDetailView(client: client, projectID: projectID)
                             .id(projectID)
+                            .frame(minWidth: 640, maxWidth: .infinity)
                     } else {
                         ContentUnavailableView(
                             "No Projects",

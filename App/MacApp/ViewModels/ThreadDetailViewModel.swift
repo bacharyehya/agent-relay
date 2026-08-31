@@ -1,4 +1,5 @@
 import AppCore
+import Foundation
 import Observation
 
 @MainActor
@@ -8,6 +9,9 @@ final class ThreadDetailViewModel {
     let threadID: String
     var threadContext: AppThreadContext?
     var errorMessage: String?
+    var isRefreshingMessages = false
+    var isSendingMessage = false
+    private var pendingPost: (body: String, replyToMessageID: String?, idempotencyKey: String)?
 
     init(
         client: any AppAPIClientProtocol,
@@ -24,17 +28,99 @@ final class ThreadDetailViewModel {
     }
 
     func loadIfNeeded() async {
-        guard threadContext == nil else {
+        if threadContext == nil {
+            await loadContext()
+        }
+        guard threadContext != nil else {
             return
         }
 
+        await refreshMessages()
+    }
+
+    func refreshMessages() async {
+        guard !isRefreshingMessages else {
+            return
+        }
+        if threadContext == nil {
+            await loadContext()
+        }
+        guard threadContext != nil else {
+            return
+        }
+
+        isRefreshingMessages = true
+        defer { isRefreshingMessages = false }
         do {
-            threadContext = try await client.fetchThreadContext(threadID: threadID, mode: "recent")
+            threadContext?.messages = try await client.fetchThreadMessages(
+                threadID: threadID,
+                limit: 100,
+                before: nil
+            )
             errorMessage = nil
         } catch {
-            threadContext = nil
             errorMessage = error.localizedDescription
         }
+    }
+
+    @discardableResult
+    func postMessage(body: String, replyToMessageID: String?) async -> Bool {
+        let trimmedBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedBody.isEmpty, !isSendingMessage else {
+            return false
+        }
+        guard await ensureContextLoaded() else {
+            return false
+        }
+
+        isSendingMessage = true
+        defer { isSendingMessage = false }
+        let idempotencyKey: String
+        if let pendingPost,
+           pendingPost.body == trimmedBody,
+           pendingPost.replyToMessageID == replyToMessageID
+        {
+            idempotencyKey = pendingPost.idempotencyKey
+        } else {
+            idempotencyKey = UUID().uuidString.lowercased()
+            pendingPost = (trimmedBody, replyToMessageID, idempotencyKey)
+        }
+        do {
+            let message = try await client.postMessage(
+                threadID: threadID,
+                request: AppPostMessageRequest(
+                    actorID: "bash",
+                    body: trimmedBody,
+                    format: .markdown,
+                    replyToMessageID: replyToMessageID,
+                    mentionedActorIDs: Self.mentionedActorIDs(in: trimmedBody),
+                    idempotencyKey: idempotencyKey
+                )
+            )
+            upsert(message)
+            pendingPost = nil
+            errorMessage = nil
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    static func mentionedActorIDs(in body: String) -> [String] {
+        let fragments = body.split { character in
+            !(character.isLetter || character.isNumber || character == "@" || character == "_" || character == "-")
+        }
+        var mentions: [String] = []
+        var seen = Set<String>()
+        for fragment in fragments where fragment.first == "@" {
+            let actorID = String(fragment.dropFirst())
+            guard !actorID.isEmpty, !actorID.contains("@"), seen.insert(actorID).inserted else {
+                continue
+            }
+            mentions.append(actorID)
+        }
+        return mentions
     }
 
     func acceptHandoff(id: String) async {
@@ -96,9 +182,19 @@ final class ThreadDetailViewModel {
 
     private func ensureContextLoaded() async -> Bool {
         if threadContext == nil {
-            await loadIfNeeded()
+            await loadContext()
         }
         return threadContext != nil
+    }
+
+    private func loadContext() async {
+        do {
+            threadContext = try await client.fetchThreadContext(threadID: threadID, mode: "recent")
+            errorMessage = nil
+        } catch {
+            threadContext = nil
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func replace(_ handoff: Handoff) {
@@ -106,5 +202,22 @@ final class ThreadDetailViewModel {
             return
         }
         threadContext?.handoffs[index] = handoff
+    }
+
+    private func upsert(_ message: Message) {
+        guard threadContext != nil else {
+            return
+        }
+        if let index = threadContext?.messages.firstIndex(where: { $0.id == message.id }) {
+            threadContext?.messages[index] = message
+        } else {
+            threadContext?.messages.append(message)
+        }
+        threadContext?.messages.sort {
+            if $0.createdAt == $1.createdAt {
+                return $0.id < $1.id
+            }
+            return $0.createdAt < $1.createdAt
+        }
     }
 }

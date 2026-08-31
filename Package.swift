@@ -6,8 +6,11 @@ let package = Package(
     platforms: [.macOS(.v15)],
     products: [
         .library(name: "AppCore", targets: ["AppCore"]),
+        .library(name: "CodexAppServer", targets: ["CodexAppServer"]),
         .executable(name: "CoreService", targets: ["CoreService"]),
         .executable(name: "MCPAdapter", targets: ["MCPAdapter"]),
+        .executable(name: "CodexRelayWorker", targets: ["CodexRelayWorker"]),
+        .executable(name: "AgentRelayDesktop", targets: ["AgentRelayDesktop"]),
     ],
     dependencies: [
         .package(url: "https://github.com/groue/GRDB.swift", from: "6.29.0"),
@@ -15,6 +18,7 @@ let package = Package(
     ],
     targets: [
         .target(name: "AppCore"),
+        .target(name: "CodexAppServer"),
         .target(
             name: "CoreStore",
             dependencies: [
@@ -38,7 +42,20 @@ let package = Package(
         ),
         .executableTarget(name: "CoreService", dependencies: ["CoreAPI"]),
         .executableTarget(name: "MCPAdapter", dependencies: ["AppCore"]),
+        .executableTarget(
+            name: "CodexRelayWorker",
+            dependencies: ["AppCore", "CodexAppServer"]
+        ),
+        .executableTarget(
+            name: "AgentRelayDesktop",
+            dependencies: ["MacAppSupport"]
+        ),
         .testTarget(name: "AppCoreTests", dependencies: ["AppCore"]),
+        .testTarget(name: "CodexAppServerTests", dependencies: ["CodexAppServer"]),
+        .testTarget(
+            name: "CodexRelayWorkerTests",
+            dependencies: ["AppCore", "CodexAppServer", "CodexRelayWorker"]
+        ),
         .testTarget(
             name: "CoreStoreTests",
             dependencies: [

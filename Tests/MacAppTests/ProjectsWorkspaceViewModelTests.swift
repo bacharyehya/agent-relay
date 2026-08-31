@@ -88,6 +88,14 @@ private struct StubProjectsAppAPIClient: AppAPIClientProtocol {
         AppThreadContext(thread: .example(id: threadID), messages: [], handoffs: [])
     }
 
+    func fetchThreadMessages(threadID: String, limit: Int, before: MessageCursor?) async throws -> [Message] {
+        []
+    }
+
+    func postMessage(threadID: String, request: AppPostMessageRequest) async throws -> Message {
+        Message(id: "message-1", threadID: threadID, actorID: request.actorID, body: request.body)
+    }
+
     func createHandoff(_ request: AppCreateHandoffRequest) async throws -> Handoff {
         Handoff.example(threadID: request.threadID)
     }

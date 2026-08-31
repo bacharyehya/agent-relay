@@ -33,6 +33,32 @@ public struct EventRepository {
         }
     }
 
+    /// Records an event once and reports whether this call inserted it.
+    public func recordIfAbsent(_ event: Event) throws -> Bool {
+        try dbQueue.write { db in
+            try db.execute(
+                sql: """
+                INSERT OR IGNORE INTO events (
+                    id, type, project_id, thread_id, handoff_id,
+                    actor_id, body, created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                arguments: [
+                    event.id,
+                    event.type.rawValue,
+                    event.projectID,
+                    event.threadID,
+                    event.handoffID,
+                    event.actorID,
+                    event.body,
+                    event.createdAt,
+                ]
+            )
+            return db.changesCount == 1
+        }
+    }
+
     public func list(limit: Int = 50) throws -> [Event] {
         try dbQueue.read { db in
             let rows = try Row.fetchAll(

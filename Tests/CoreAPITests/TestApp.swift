@@ -3,9 +3,18 @@ import AppCore
 import CoreStore
 import Foundation
 import Hummingbird
+import HTTPTypes
 
 enum TestApp {
     static let token = "test-token"
+    static let actorCredentialStore: ActorCredentialStore = {
+        let supportDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "agent-relay-core-api-tests-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        return try! ActorCredentialStore(supportDirectory: supportDirectory)
+    }()
+    static let bashCredential = try! actorCredentialStore.loadOrCreate(actorID: "bash")
 
     static func make() throws -> Application<RouterResponder<BasicRequestContext>> {
         let databaseQueue = try AppDatabase.makeInMemoryDatabase()
@@ -44,6 +53,17 @@ enum TestApp {
             format: .markdown,
             createdAt: timestamp.addingTimeInterval(30)
         )
+        let preciseSharedTimestamp = timestamp.addingTimeInterval(60.123456789)
+        let sameTimestampMessages = ["message-api-same-a", "message-api-same-b", "message-api-same-c"].map {
+            Message(
+                id: $0,
+                threadID: thread.id,
+                actorID: "bash",
+                body: $0,
+                format: .markdown,
+                createdAt: preciseSharedTimestamp
+            )
+        }
         let openHandoff = Handoff(
             id: "handoff-api-open",
             threadID: thread.id,
@@ -71,33 +91,20 @@ enum TestApp {
 
         try ProjectRepository(databaseQueue).create(project)
         try ThreadRepository(databaseQueue).create(thread)
-        try databaseQueue.write { database in
-            try database.execute(
-                sql: """
-                INSERT INTO messages (id, thread_id, actor_id, body, format, created_at)
-                VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
-                """,
-                arguments: [
-                    firstMessage.id,
-                    firstMessage.threadID,
-                    firstMessage.actorID,
-                    firstMessage.body,
-                    firstMessage.format.rawValue,
-                    firstMessage.createdAt,
-                    secondMessage.id,
-                    secondMessage.threadID,
-                    secondMessage.actorID,
-                    secondMessage.body,
-                    secondMessage.format.rawValue,
-                    secondMessage.createdAt,
-                ]
-            )
+        let messageRepository = MessageRepository(databaseQueue)
+        try messageRepository.create(firstMessage)
+        try messageRepository.create(secondMessage)
+        for message in sameTimestampMessages {
+            try messageRepository.create(message)
         }
         try HandoffRepository(databaseQueue).create(openHandoff)
         try HandoffRepository(databaseQueue).create(blockedHandoff)
         let searchRepository = SearchRepository(databaseQueue)
         try searchRepository.index(message: firstMessage)
         try searchRepository.index(message: secondMessage)
+        for message in sameTimestampMessages {
+            try searchRepository.index(message: message)
+        }
         try searchRepository.index(handoff: openHandoff)
         try searchRepository.index(handoff: blockedHandoff)
         try EventRepository(databaseQueue).record(
@@ -128,17 +135,34 @@ enum TestApp {
         let environment = AppEnvironment(
             projectRepository: ProjectRepository(databaseQueue),
             threadRepository: ThreadRepository(databaseQueue),
+            messageRepository: messageRepository,
             handoffRepository: HandoffRepository(databaseQueue),
             eventRepository: EventRepository(databaseQueue),
             inboxRepository: InboxRepository(databaseQueue),
             notificationRepository: NotificationRepository(databaseQueue),
             searchRepository: searchRepository,
-            authToken: AuthToken(token)
+            authToken: AuthToken(token),
+            actorCredentialStore: Self.actorCredentialStore
         )
         return CoreAPIApp.makeApplication(environment: environment)
     }
 
     static var authorizedHeaders: HTTPFields {
         [.authorization: "Bearer \(token)"]
+    }
+
+    static func actorHeaders(
+        actorID: String = "bash",
+        idempotencyKey: String = UUID().uuidString
+    ) -> HTTPFields {
+        var headers = authorizedHeaders
+        let actorName = HTTPField.Name(ActorCredential.actorHeader)!
+        let credentialName = HTTPField.Name(ActorCredential.credentialHeader)!
+        let idempotencyName = HTTPField.Name("Idempotency-Key")!
+
+        headers[actorName] = actorID
+        headers[credentialName] = bashCredential
+        headers[idempotencyName] = idempotencyKey
+        return headers
     }
 }

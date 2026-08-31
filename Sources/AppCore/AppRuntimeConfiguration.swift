@@ -78,17 +78,22 @@ public enum AppRuntimeConfiguration {
             fileManager: fileManager
         ).appendingPathComponent(authTokenFileName, isDirectory: false)
 
-        if fileManager.fileExists(atPath: tokenURL.path()) {
+        let tokenPath = tokenURL.path(percentEncoded: false)
+        if fileManager.fileExists(atPath: tokenPath) {
             let existing = try String(contentsOf: tokenURL, encoding: .utf8)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             if !existing.isEmpty {
+                try fileManager.setAttributes(
+                    [.posixPermissions: 0o600],
+                    ofItemAtPath: tokenPath
+                )
                 return existing
             }
         }
 
         let token = try generateAuthToken()
         try token.write(to: tokenURL, atomically: true, encoding: .utf8)
-        try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: tokenURL.path())
+        try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: tokenPath)
         return token
     }
 
